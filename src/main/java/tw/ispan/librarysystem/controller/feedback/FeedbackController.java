@@ -73,7 +73,7 @@ public class FeedbackController {
             dto.setName(feedback.getName());
             dto.setSubject(feedback.getSubject());
             dto.setContent(feedback.getContent());
-            dto.setStatus(feedback.getStatus());
+            dto.setStatus(feedback.getStatus().toString());
             dto.setReply(feedback.getReply());
             dto.setRepliedAt(feedback.getRepliedAt());
             dto.setCreatedAt(feedback.getCreatedAt());

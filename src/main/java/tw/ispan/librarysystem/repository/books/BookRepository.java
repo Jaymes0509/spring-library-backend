@@ -33,7 +33,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer>,JpaSp
        "(:author          IS NULL OR LOWER(b.author)      LIKE LOWER(CONCAT('%', :author, '%'))) AND " +
        "(:publisher       IS NULL OR LOWER(b.publisher)   LIKE LOWER(CONCAT('%', :publisher, '%'))) AND " +
        "(:isbn            IS NULL OR b.isbn               LIKE CONCAT('%', :isbn, '%')) AND " +
-       "(:classification  IS NULL OR b.classification     = :classification) AND " +
+       "(:classification  IS NULL OR b.classification     LIKE CONCAT('%', :classification, '%')) AND " +
        "(:yearFrom       IS NULL OR SUBSTRING(b.publishdate,1,4) >= :yearFrom) AND " +
        "(:yearTo         IS NULL OR SUBSTRING(b.publishdate,1,4) <= :yearTo) AND " +
        "(:language        IS NULL OR b.language          = :language)"

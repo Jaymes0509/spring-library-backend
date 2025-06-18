@@ -2,6 +2,7 @@ package tw.ispan.librarysystem.dto.feedback;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import tw.ispan.librarysystem.enums.FeedbackStatus;
 
 @Data
 public class FeedbackReplyDto {
@@ -12,6 +13,6 @@ public class FeedbackReplyDto {
     private String reply;
 
     @NotBlank(message = "狀態不能為空")
-    private String status; // 例如 "已回覆";
+    private FeedbackStatus status; // 例如 "已回覆";
 }
 
