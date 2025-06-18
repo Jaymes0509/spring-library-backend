@@ -3,6 +3,7 @@ package tw.ispan.librarysystem.entity.feedback;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
+import tw.ispan.librarysystem.enums.FeedbackStatus;
 
 import java.time.LocalDateTime;
 
@@ -32,13 +33,15 @@ public class Feedback {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(length = 1000)
+    @Column(length = 1000, nullable = true)
     private String reply;
 
+    @Column(nullable = true)
     private LocalDateTime repliedAt;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private String status = "待處理";
+    private FeedbackStatus status = FeedbackStatus.待處理;
 
 
 
