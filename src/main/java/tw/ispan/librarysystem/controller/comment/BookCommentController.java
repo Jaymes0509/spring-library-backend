@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tw.ispan.librarysystem.entity.comment.BookComment;
 import tw.ispan.librarysystem.service.comment.BookCommentService;
+import tw.ispan.librarysystem.dto.comment.TakeCommentBookInfoDto;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
@@ -21,7 +22,6 @@ public class BookCommentController {
     // 新增書評（POST）
     @PostMapping
     public ResponseEntity<BookComment> createComment(@RequestBody BookComment comment) {
-        // 新增時不應帶有 commentId，若帶了可檢查或忽略
         comment.setCommentId(null); // 確保是新增
         BookComment saved = bookCommentService.saveComment(comment);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
@@ -30,12 +30,10 @@ public class BookCommentController {
     // 更新書評（PUT）
     @PutMapping("/{commentId}")
     public ResponseEntity<BookComment> updateComment(@PathVariable Integer commentId, @RequestBody BookComment comment) {
-        // 先檢查要更新的書評是否存在
         Optional<BookComment> existing = bookCommentService.findCommentById(commentId);
         if (existing.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        // 設定要更新的ID，防止錯誤
         comment.setCommentId(commentId);
         BookComment updated = bookCommentService.saveComment(comment);
         return ResponseEntity.ok(updated);
@@ -48,17 +46,39 @@ public class BookCommentController {
         return ResponseEntity.noContent().build();
     }
 
-    // 查詢某使用者對某書的書評（用於檢查是否已評論）
+    // 查詢某使用者對某書的書評（檢查是否已評論）
     @GetMapping("/book/{bookId}/user/{userId}")
     public ResponseEntity<BookComment> getCommentByUserAndBook(@PathVariable Integer bookId, @PathVariable Integer userId) {
         Optional<BookComment> comment = bookCommentService.findCommentByBookIdAndUserId(bookId, userId);
         return comment.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    // 查詢某書所有書評
     @GetMapping("/book/{bookId}")
     public ResponseEntity<List<BookComment>> getCommentsByBookId(@PathVariable Integer bookId) {
         List<BookComment> comments = bookCommentService.findCommentsByBookId(bookId);
         return ResponseEntity.ok(comments);
+    }
+
+    // 取得可撰寫書評的書籍清單
+    @GetMapping("/reviewable-books/{userId}")
+    public ResponseEntity<List<TakeCommentBookInfoDto>> getReviewableBooks(@PathVariable Integer userId) {
+        List<TakeCommentBookInfoDto> books = bookCommentService.findReviewableBooks(userId);
+        return ResponseEntity.ok(books);
+    }
+
+    // 取得用戶所有書評（新增此方法以取得用戶的書評列表）
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<BookComment>> getCommentsByUserId(@PathVariable Integer userId) {
+        List<BookComment> comments = bookCommentService.findCommentsByUserId(userId);
+        return ResponseEntity.ok(comments);
+    }
+
+    // 取得用戶所有借閱書籍（含書名作者）
+    @GetMapping("/borrowed-books/{userId}")
+    public ResponseEntity<List<TakeCommentBookInfoDto>> getAllBorrowedBooks(@PathVariable Integer userId) {
+        List<TakeCommentBookInfoDto> books = bookCommentService.findAllBorrowedBooks(userId);
+        return ResponseEntity.ok(books);
     }
 
 }
