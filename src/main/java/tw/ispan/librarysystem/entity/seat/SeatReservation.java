@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import tw.ispan.librarysystem.enums.TimeSlot;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,12 +23,16 @@ public class SeatReservation {
     private Integer userId;
 
     @ManyToOne
-    @JoinColumn(name = "seat_id")
+    @JoinColumn(name = "s_id")
     private SeatStatus seat;
 
+    @Column(name = "reservation_date")
     private LocalDate reservationDate;
 
-    private String timeSlot;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "time_slot", nullable = false)
+    private TimeSlot timeSlot;
+
 
     @Enumerated(EnumType.STRING)
     private Status status;
