@@ -8,6 +8,7 @@ import tw.ispan.librarysystem.enums.TimeSlot;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface SeatReservationRepository extends JpaRepository<SeatReservation, Long> {
 
@@ -18,6 +19,14 @@ public interface SeatReservationRepository extends JpaRepository<SeatReservation
 //    該使用者是否已在同一日期同一時段預約過座位
     boolean existsByUserIdAndReservationDateAndTimeSlotAndStatus(
             Integer userId, LocalDate reservationDate, TimeSlot timeSlot, SeatReservation.Status status);
+    // 要排除 CANCELLED 狀態, 是否有非取消狀態的預約（例如：RESERVED）
+//    boolean existsByUserIdAndReservationDateAndTimeSlotAndStatusNot(
+//            Integer userId,
+//            LocalDate reservationDate,
+//            TimeSlot timeSlot,
+//            SeatReservation.Status status
+//    );
+
 
     boolean existsBySeatAndReservationDateAndTimeSlotAndStatus(
             SeatStatus seat, LocalDate date, TimeSlot timeSlot, SeatReservation.Status status
@@ -30,9 +39,8 @@ public interface SeatReservationRepository extends JpaRepository<SeatReservation
             SeatReservation.Status status
     );
 
-    List<SeatReservation> findByUserIdAndSeatAndReservationDateAndTimeSlotAndStatus(
+    Optional<SeatReservation> findByUserIdAndReservationDateAndTimeSlotAndStatus(
             Integer userId,
-            SeatStatus seat,
             LocalDate reservationDate,
             TimeSlot timeSlot,
             SeatReservation.Status status

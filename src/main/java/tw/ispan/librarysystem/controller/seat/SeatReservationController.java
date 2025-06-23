@@ -82,14 +82,17 @@ public class SeatReservationController {
             @RequestParam Integer userId,
             @RequestParam String seatLabel,
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam("timeSlot") String timeSlotStr //  先接字串
+            @RequestParam("timeSlot") String timeSlotStr
     ) {
         try {
-            TimeSlot timeSlot = TimeSlot.fromLabel(timeSlotStr); //  再轉 enum
-            String result = seatReservationService.cancelReservationByUser(userId, seatLabel, date, timeSlot);
+            TimeSlot timeSlot = TimeSlot.fromLabel(timeSlotStr);
+            boolean cancelled = seatReservationService.cancelReservationByUser(userId, seatLabel, date, timeSlot);
 
-            if (result.contains("成功")) return ResponseEntity.ok(result);
-            return ResponseEntity.badRequest().body(result);
+            if (cancelled) {
+                return ResponseEntity.ok("✅ 預約已取消");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("❌ 找不到要取消的預約");
+            }
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("❌ 無效的時段：" + timeSlotStr);
