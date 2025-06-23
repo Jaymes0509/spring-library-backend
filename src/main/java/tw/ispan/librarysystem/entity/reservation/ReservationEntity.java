@@ -35,6 +35,9 @@ public class ReservationEntity {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "batch_id")
+    private String batchId;
+
     // Getters and Setters
     public Integer getReservationId() {
         return reservationId;
@@ -100,6 +103,14 @@ public class ReservationEntity {
         this.updatedAt = updatedAt;
     }
 
+    public String getBatchId() {
+        return batchId;
+    }
+
+    public void setBatchId(String batchId) {
+        this.batchId = batchId;
+    }
+
     @Override
     public String toString() {
         return "ReservationEntity{" +
@@ -111,6 +122,7 @@ public class ReservationEntity {
                 ", status='" + status + '\'' +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
+                ", batchId='" + batchId + '\'' +
                 '}';
     }
 }

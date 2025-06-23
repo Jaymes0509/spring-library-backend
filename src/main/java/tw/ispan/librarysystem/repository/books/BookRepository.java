@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import tw.ispan.librarysystem.entity.books.BookEntity;
+import tw.ispan.librarysystem.dto.BookSimpleDTO;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,15 +21,22 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer>,JpaSp
 
     // 🔸 為 Specification 查詢加上 EntityGraph，解決 lazy loading 問題
     @Override
-    @EntityGraph(attributePaths = {"category", "category.categorysystem"})
     Page<BookEntity> findAll(Specification<BookEntity> spec, Pageable pageable);
     
-    // 基本搜尋
-    List<BookEntity> findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(String title, String author);
+    @EntityGraph(attributePaths = {"category", "category.categorysystem", "bookDetail"})
+    Optional<BookEntity> findById(Integer id);
+
+    // 基本搜尋（查 title, author, isbn, imgUrl, publisher, publishdate）
+    @Query("SELECT new tw.ispan.librarysystem.dto.BookSimpleDTO(b.bookId, b.isbn, b.title, b.author, d.imgUrl, b.publisher, b.publishdate) FROM BookEntity b LEFT JOIN b.bookDetail d WHERE " +
+           "LOWER(b.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(b.author) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(b.isbn) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<BookSimpleDTO> simpleSearchWithCover(@Param("keyword") String keyword, Pageable pageable);
     
-    // 進階多條件搜尋，支援出版年區間與多選語言
+    
+    // 進階多條件搜尋（查 title, author, isbn, imgUrl, publisher, publishdate）
     @Query(value =
-       "SELECT b FROM BookEntity b WHERE " +
+       "SELECT new tw.ispan.librarysystem.dto.BookSimpleDTO(b.bookId, b.isbn, b.title, b.author, d.imgUrl, b.publisher, b.publishdate) FROM BookEntity b LEFT JOIN b.bookDetail d WHERE " +
        "(:title           IS NULL OR LOWER(b.title)       LIKE LOWER(CONCAT('%', :title, '%'))) AND " +
        "(:author          IS NULL OR LOWER(b.author)      LIKE LOWER(CONCAT('%', :author, '%'))) AND " +
        "(:publisher       IS NULL OR LOWER(b.publisher)   LIKE LOWER(CONCAT('%', :publisher, '%'))) AND " +
@@ -38,7 +46,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer>,JpaSp
        "(:yearTo         IS NULL OR SUBSTRING(b.publishdate,1,4) <= :yearTo) AND " +
        "(:language        IS NULL OR b.language          = :language)"
     )
-    Page<BookEntity> searchBooks(
+    Page<BookSimpleDTO> advancedSearchWithCover(
         @Param("title")          String title,
         @Param("author")         String author,
         @Param("publisher")      String publisher,

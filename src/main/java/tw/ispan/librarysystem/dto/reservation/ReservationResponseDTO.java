@@ -5,6 +5,7 @@ import java.util.List;
 public class ReservationResponseDTO {
     private boolean success;
     private List<Result> results;
+    private String batchReservationId;
 
     public boolean isSuccess() {
         return success;
@@ -17,6 +18,13 @@ public class ReservationResponseDTO {
     }
     public void setResults(List<Result> results) {
         this.results = results;
+    }
+    
+    public String getBatchReservationId() {
+        return batchReservationId;
+    }
+    public void setBatchReservationId(String batchReservationId) {
+        this.batchReservationId = batchReservationId;
     }
 
     public static class Result {

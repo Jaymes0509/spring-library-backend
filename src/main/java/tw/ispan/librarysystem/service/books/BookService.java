@@ -19,12 +19,15 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 import tw.ispan.librarysystem.dto.SearchCondition;
+import tw.ispan.librarysystem.dto.BookSimpleDTO;
+import tw.ispan.librarysystem.dto.BookDTO;
 import tw.ispan.librarysystem.entity.books.BookDetailEntity;
 import tw.ispan.librarysystem.entity.books.BookEntity;
 import tw.ispan.librarysystem.entity.books.CategoryEntity;
 import tw.ispan.librarysystem.entity.books.CategorySystemEntity;
 import tw.ispan.librarysystem.repository.books.BookDetailRepository;
 import tw.ispan.librarysystem.repository.books.BookRepository;
+import tw.ispan.librarysystem.mapper.BookMapper;
 
 @Service
 public class BookService {
@@ -34,6 +37,9 @@ public class BookService {
 
     @Autowired
     private BookDetailRepository bookDetailRepository;
+
+    @Autowired
+    private BookMapper bookMapper;
 
     /**
      * 根據書籍與外部 API 資訊，儲存或更新書籍詳細資料（封面與摘要）
@@ -87,40 +93,24 @@ public class BookService {
     }
 
     /**
-     * 簡易搜尋：依照 field 與 keyword
+     * 簡易搜尋：只查 title, author, isbn, imgUrl
      */
-    public Page<BookEntity> simpleSearch(String field, String keyword, Pageable pageable) {
-        Specification<BookEntity> spec = (root, query, cb) -> {
-            switch (field) {
-                case "title":
-                    return cb.like(cb.lower(root.get("title")), "%" + keyword.toLowerCase() + "%");
-                case "author":
-                    return cb.like(cb.lower(root.get("author")), "%" + keyword.toLowerCase() + "%");
-                case "publisher":
-                    return cb.like(cb.lower(root.get("publisher")), "%" + keyword.toLowerCase() + "%");
-                case "isbn":
-                    return cb.like(cb.lower(root.get("isbn")), "%" + keyword.toLowerCase() + "%");
-                case "classification":
-                    return cb.equal(root.get("classification"), keyword);
-                case "categorysystem":
-                    Join<BookEntity, CategoryEntity> catJoin = root.join("category", JoinType.INNER);
-                    Join<CategoryEntity, CategorySystemEntity> sysJoin = catJoin.join("categorysystem", JoinType.INNER);
-                    return cb.equal(cb.lower(sysJoin.get("code")), keyword.toLowerCase());
-                case "language":
-                    return cb.equal(cb.lower(root.get("language")), keyword.toLowerCase());
-                default:
-                    return cb.conjunction();
-            }
-        };
-        return bookRepository.findAll(spec, pageable);
+    public Page<BookSimpleDTO> simpleSearch(String field, String keyword, Pageable pageable) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return Page.empty(pageable);
+        }
+        return bookRepository.simpleSearchWithCover(keyword.trim(), pageable);
     }
 
     /**
-     * 進階搜尋：根據多個條件動態組 Query
+     * 進階搜尋：回傳 Page<BookDTO>
      */
-    public Page<BookEntity> advancedSearch(List<SearchCondition> conditions, Pageable pageable) {
+    public Page<BookDTO> advancedSearch(List<SearchCondition> conditions, Pageable pageable) {
         Specification<BookEntity> spec = buildSpecification(conditions);
-        return bookRepository.findAll(spec, pageable);
+        Page<BookEntity> entityPage = bookRepository.findAll(spec, pageable);
+        // 用 Mapper 轉換
+        List<BookDTO> dtoList = entityPage.getContent().stream().map(bookMapper::toDTO).toList();
+        return new org.springframework.data.domain.PageImpl<>(dtoList, pageable, entityPage.getTotalElements());
     }
 
     private Specification<BookEntity> buildSpecification(List<SearchCondition> conditions) {

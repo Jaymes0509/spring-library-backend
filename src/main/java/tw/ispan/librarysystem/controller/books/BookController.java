@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import tw.ispan.librarysystem.dto.BookDTO;
 import tw.ispan.librarysystem.dto.PageResponseDTO;
 import tw.ispan.librarysystem.dto.SearchCondition;
+import tw.ispan.librarysystem.dto.BookSimpleDTO;
 import tw.ispan.librarysystem.entity.books.BookEntity;
 import tw.ispan.librarysystem.entity.reservation.ReservationEntity;
 import tw.ispan.librarysystem.mapper.BookMapper;
@@ -110,8 +111,7 @@ public class BookController {
     }
 
     @GetMapping("/simple-search")
-    public PageResponseDTO<BookDTO> simpleSearch(
-        @RequestParam String field,
+    public PageResponseDTO<BookSimpleDTO> simpleSearch(
         @RequestParam String keyword,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size,
@@ -120,8 +120,8 @@ public class BookController {
     ) {
         Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
-        Page<BookEntity> bookPage = bookService.simpleSearch(field, keyword, pageable);
-        return bookMapper.toPageDTO(bookPage);
+        Page<BookSimpleDTO> bookPage = bookService.simpleSearch(null,keyword, pageable);
+        return new PageResponseDTO<>(bookPage.getContent(), bookPage.getNumber(), bookPage.getSize(), bookPage.getTotalElements(), bookPage.getTotalPages(), bookPage.isLast(), bookPage.isFirst());
     }
 
     @PostMapping("/advanced-search")
@@ -134,8 +134,8 @@ public class BookController {
     ) {
         Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
-        Page<BookEntity> bookPage = bookService.advancedSearch(conditions, pageable);
-        return bookMapper.toPageDTO(bookPage);
+        Page<BookDTO> bookPage = bookService.advancedSearch(conditions, pageable);
+        return new PageResponseDTO<>(bookPage.getContent(), bookPage.getNumber(), bookPage.getSize(), bookPage.getTotalElements(), bookPage.getTotalPages(), bookPage.isLast(), bookPage.isFirst());
     }
 
     @GetMapping("/check-reservations-table")

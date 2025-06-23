@@ -7,14 +7,22 @@ import org.springframework.web.bind.annotation.*;
 import tw.ispan.librarysystem.dto.reservation.ReservationDTO;
 import tw.ispan.librarysystem.dto.reservation.ReservationBatchRequestDTO;
 import tw.ispan.librarysystem.dto.reservation.ReservationResponseDTO;
+import tw.ispan.librarysystem.dto.reservation.ReservationHistoryDTO;
+import tw.ispan.librarysystem.dto.reservation.ReservationConfirmRequest;
+import tw.ispan.librarysystem.dto.reservation.ApiResponse;
 import tw.ispan.librarysystem.entity.reservation.ReservationEntity;
+import tw.ispan.librarysystem.entity.reservation.ReservationLogEntity;
 import tw.ispan.librarysystem.repository.reservation.ReservationRepository;
-import tw.ispan.librarysystem.service.ReservationService;
+import tw.ispan.librarysystem.service.reservation.ReservationService;
+import tw.ispan.librarysystem.service.reservation.ReservationLogService;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/bookreservations")
@@ -26,6 +34,9 @@ public class ReservationController {
     
     @Autowired
     private ReservationService reservationService;
+    
+    @Autowired
+    private ReservationLogService reservationLogService;
 
     // 查詢用戶預約清單
     @GetMapping
@@ -88,8 +99,13 @@ public class ReservationController {
     @PostMapping("/batch")
     public ResponseEntity<ReservationResponseDTO> batchReservation(@RequestBody ReservationBatchRequestDTO batchDto) {
         ReservationResponseDTO response = new ReservationResponseDTO();
+        
+        // 生成統一的批次預約編號
+        String batchReservationId = "BATCH_" + System.currentTimeMillis();
+        
         List<ReservationResponseDTO.Result> results = new ArrayList<>();
         boolean allSuccess = true;
+        
         for (ReservationBatchRequestDTO.BookReserveItem item : batchDto.getBooks()) {
             ReservationResponseDTO.Result result = new ReservationResponseDTO.Result();
             result.setBookId(item.getBookId());
@@ -98,12 +114,11 @@ public class ReservationController {
                 dto.setBookId(item.getBookId());
                 dto.setUserId(batchDto.getUserId());
                 dto.setStatus("PENDING");
-                // reserve_time 轉型
-                try {
-                    dto.setReserveTime(java.time.LocalDateTime.parse(item.getReserveTime()));
-                } catch (DateTimeParseException e) {
-                    throw new RuntimeException("reserveTime 格式錯誤，請用 yyyy-MM-dd'T'HH:mm:ss");
-                }
+                dto.setReserveTime(java.time.LocalDateTime.parse(item.getReserveTime()));
+                
+                // 設定統一的批次編號到每筆預約記錄
+                dto.setBatchId(batchReservationId);
+                
                 ReservationEntity entity = reservationService.createReservation(dto);
                 result.setReservationId(entity.getReservationId());
                 result.setStatus("success");
@@ -111,11 +126,19 @@ public class ReservationController {
                 result.setStatus("fail");
                 result.setReason(e.getMessage());
                 allSuccess = false;
+                e.printStackTrace();
             }
             results.add(result);
         }
+        
         response.setSuccess(allSuccess);
         response.setResults(results);
+        response.setBatchReservationId(batchReservationId); // 回傳統一編號
+        try {
+            System.out.println("批量預約回傳內容：" + new ObjectMapper().writeValueAsString(response));
+        } catch (Exception e) {
+            System.out.println("回傳內容序列化失敗：" + e.getMessage());
+        }
         return ResponseEntity.ok(response);
     }
 
@@ -141,5 +164,92 @@ public class ReservationController {
                     return ResponseEntity.ok(reservationService.convertToDTO(updated));
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // 批量刪除預約
+    @DeleteMapping("/batch")
+    public ResponseEntity<?> batchDeleteReservations(@RequestBody BatchDeleteRequest request) {
+        try {
+            reservationRepository.deleteAllById(request.getReservationIds());
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("批量刪除失敗：" + e.getMessage());
+        }
+    }
+
+    // 批量刪除請求 DTO
+    public static class BatchDeleteRequest {
+        private List<Integer> reservationIds;
+        public List<Integer> getReservationIds() { return reservationIds; }
+        public void setReservationIds(List<Integer> reservationIds) { this.reservationIds = reservationIds; }
+    }
+
+    // 新增：預約歷史查詢 API
+    @GetMapping("/history")
+    public ResponseEntity<List<ReservationHistoryDTO>> getReservationHistory(
+        @RequestParam(required = false) String userId
+    ) {
+        try {
+            if (userId != null) {
+                // 查詢特定會員的預約歷史
+                List<ReservationHistoryDTO> history = reservationService.getReservationHistoryByUserId(userId);
+                return ResponseEntity.ok(history);
+            } else {
+                // 查詢所有預約歷史 (管理員功能)
+                List<ReservationHistoryDTO> history = reservationService.getAllReservationHistory();
+                return ResponseEntity.ok(history);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/confirm")
+    public ResponseEntity<ApiResponse> confirmReservation(@RequestBody ReservationConfirmRequest request) {
+        try {
+            // 1. 檢查預約日誌是否存在
+            Optional<ReservationLogEntity> logOpt = reservationLogService.getLogById(request.getLogId());
+            if (!logOpt.isPresent()) {
+                return ResponseEntity.badRequest()
+                    .body(new ApiResponse(false, "找不到預約日誌記錄"));
+            }
+            
+            ReservationLogEntity log = logOpt.get();
+            
+            // 2. 檢查使用者身份
+            if (!log.getUserId().equals(request.getUserId())) {
+                return ResponseEntity.badRequest()
+                    .body(new ApiResponse(false, "無權限確認此預約"));
+            }
+            
+            // 3. 檢查書籍是否一致
+            if (!log.getBook().getBookId().equals(request.getBookId())) {
+                return ResponseEntity.badRequest()
+                    .body(new ApiResponse(false, "書籍資訊不符"));
+            }
+            
+            // 4. 檢查狀態是否為 PENDING
+            if (!"PENDING".equals(log.getStatus())) {
+                return ResponseEntity.badRequest()
+                    .body(new ApiResponse(false, "此預約已被處理"));
+            }
+            
+            // 5. 建立正式預約記錄
+            ReservationEntity reservation = reservationService.createReservation(log);
+            
+            // 6. 更新預約日誌狀態
+            reservationLogService.updateLogStatus(log, "CONFIRMED");
+            
+            // 7. 建立回應
+            ApiResponse response = new ApiResponse(true, "預約確認成功");
+            response.setReservationId(reservation.getReservationId());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ApiResponse(false, e.getMessage()));
+        }
     }
 } 
