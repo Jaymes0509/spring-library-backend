@@ -91,9 +91,13 @@ public class BookController {
             reservation.setUserId(request != null ? request.getUserId() : 1); // 預設用戶ID為1
             reservation.setReserveTime(LocalDateTime.now());
             reservation.setExpiryDate(LocalDateTime.now().plusDays(3)); // 3天後過期
-            reservation.setStatus("PENDING");
+            reservation.setStatus(ReservationEntity.STATUS_PENDING);
             reservation.setCreatedAt(LocalDateTime.now());
             reservation.setUpdatedAt(LocalDateTime.now());
+            
+            // 設定預設的取書相關資訊
+            reservation.setPickupLocation("一樓服務台");
+            reservation.setPickupMethod("親自取書");
             
             System.out.println("準備儲存預約記錄...");
             System.out.println("預約記錄內容: " + reservation.toString());
