@@ -9,9 +9,9 @@ import java.util.Optional;
 @Repository
 public interface LikeBookRepository extends JpaRepository<LikeBook, Long> {
 
-    Optional<LikeBook> findByCommentIdAndMemberId(Integer commentId, Integer memberId);
+    Optional<LikeBook> findByCommentIdAndUserId(Integer commentId, Integer userId);
 
-    void deleteByCommentIdAndMemberId(Integer commentId, Integer memberId);
+    void deleteByCommentIdAndUserId(Integer commentId, Integer userId);
 
     long countByCommentId(Integer commentId);
 }

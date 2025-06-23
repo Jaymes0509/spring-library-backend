@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import tw.ispan.librarysystem.entity.books.BookDetailEntity;
 import tw.ispan.librarysystem.entity.books.BookEntity;
 import tw.ispan.librarysystem.repository.books.BookDetailRepository;
-import tw.ispan.librarysystem.repository.books.BookRepository;
+import tw.ispan.librarysystem.repository.manager.books.ManagerBookRepository;
 import tw.ispan.librarysystem.dto.SearchCondition;
 import jakarta.persistence.criteria.Predicate;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,11 +21,11 @@ import java.util.Optional;
 public class ManagerBookService {
 
     @Autowired
-    private BookRepository bookRepository;
+    private ManagerBookRepository bookRepository;
 
     // 進階搜尋
     public Page<BookEntity> searchBooks(String title, String author, String publisher, String isbn,
-            String classification, String yearFrom, String yearTo, String language, Pageable pageable) {
+                                        String classification, String yearFrom, String yearTo, String language, Pageable pageable) {
         return bookRepository.searchBooks(title, author, publisher, isbn, classification, yearFrom, yearTo, language,
                 pageable);
     }

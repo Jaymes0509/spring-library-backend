@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import tw.ispan.librarysystem.entity.books.BookEntity;
 
 @Entity
-@Table(name = "reservations")  // 保持 reservations 表
+@Table(name = "reservations")
 public class ReservationEntity {
 
     @Id
@@ -14,8 +14,8 @@ public class ReservationEntity {
     private Integer reservationId;
 
     @ManyToOne
-    @JoinColumn(name = "book_id", referencedColumnName = "book_id")  // 使用 book_id 關聯 BookEntity
-    private BookEntity book;  // 與 BookEntity 關聯
+    @JoinColumn(name = "book_id", referencedColumnName = "book_id")
+    private BookEntity book;
 
     @Column(name = "user_id")
     private Integer userId;
@@ -27,7 +27,10 @@ public class ReservationEntity {
     private LocalDateTime expiryDate;
 
     @Column(name = "status")
-    private String status;  // PENDING, COMPLETED, CANCELLED
+    private String status;  // 舊有字串型狀態欄位（如 PENDING、CANCELLED）
+
+    @Column(name = "reserve_status")
+    private Integer reserveStatus; // 0: 未完成, 1: 成功
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -87,6 +90,14 @@ public class ReservationEntity {
         this.status = status;
     }
 
+    public Integer getReserveStatus() {
+        return reserveStatus;
+    }
+
+    public void setReserveStatus(Integer reserveStatus) {
+        this.reserveStatus = reserveStatus;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -120,6 +131,7 @@ public class ReservationEntity {
                 ", reserveTime=" + reserveTime +
                 ", expiryDate=" + expiryDate +
                 ", status='" + status + '\'' +
+                ", reserveStatus=" + reserveStatus +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 ", batchId='" + batchId + '\'' +
