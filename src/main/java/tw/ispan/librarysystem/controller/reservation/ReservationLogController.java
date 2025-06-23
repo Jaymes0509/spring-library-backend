@@ -100,8 +100,10 @@ public class ReservationLogController {
             // 查書名、作者
             BookEntity book = bookRepository.findById(log.getBookId().intValue()).orElse(null);
             if (book != null) {
+                logger.info("logId={}, bookId={}, isbn={}", log.getId(), book.getBookId(), book.getIsbn());
                 dto.setTitle(book.getTitle());
                 dto.setAuthor(book.getAuthor());
+                dto.setIsbn(book.getIsbn());
             }
             return dto;
         }).collect(Collectors.toList());
