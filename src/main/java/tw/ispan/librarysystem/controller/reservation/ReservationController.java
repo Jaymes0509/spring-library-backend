@@ -55,6 +55,7 @@ public class ReservationController {
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
+            System.out.println("預約失敗訊息：" + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -86,6 +87,7 @@ public class ReservationController {
             result.setStatus("success");
             response.setSuccess(true);
         } catch (Exception e) {
+            System.out.println("預約失敗訊息：" + e.getMessage());
             result.setStatus("fail");
             result.setReason(e.getMessage());
             response.setSuccess(false);
@@ -114,15 +116,26 @@ public class ReservationController {
                 dto.setBookId(item.getBookId());
                 dto.setUserId(batchDto.getUserId());
                 dto.setStatus("PENDING");
+                if (item.getReserveTime() == null) {
+                    throw new RuntimeException("資料缺失");
+                }
                 dto.setReserveTime(java.time.LocalDateTime.parse(item.getReserveTime()));
-                
-                // 設定統一的批次編號到每筆預約記錄
                 dto.setBatchId(batchReservationId);
-                
                 ReservationEntity entity = reservationService.createReservation(dto);
                 result.setReservationId(entity.getReservationId());
                 result.setStatus("success");
+            } catch (java.time.format.DateTimeParseException e) {
+                System.out.println("預約失敗訊息：時間格式錯誤");
+                result.setStatus("fail");
+                result.setReason("資料缺失");
+                allSuccess = false;
+            } catch (NullPointerException e) {
+                System.out.println("預約失敗訊息：欄位為空");
+                result.setStatus("fail");
+                result.setReason("資料缺失");
+                allSuccess = false;
             } catch (Exception e) {
+                System.out.println("預約失敗訊息：" + e.getMessage());
                 result.setStatus("fail");
                 result.setReason(e.getMessage());
                 allSuccess = false;

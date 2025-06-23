@@ -8,6 +8,7 @@ import tw.ispan.librarysystem.dto.reservation.ReservationHistoryDTO;
 import tw.ispan.librarysystem.entity.reservation.ReservationEntity;
 import tw.ispan.librarysystem.entity.reservation.ReservationLogEntity;
 import tw.ispan.librarysystem.repository.reservation.ReservationRepository;
+import tw.ispan.librarysystem.repository.borrow.BorrowRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,6 +20,9 @@ public class ReservationService {
 
     @Autowired
     private ReservationRepository reservationRepository;
+
+    @Autowired
+    private BorrowRepository borrowRepository;
 
     public List<ReservationDTO> getAllReservationsWithBookInfo() {
         List<ReservationEntity> reservations = reservationRepository.findAll();
@@ -76,6 +80,22 @@ public class ReservationService {
 
     // 新增：建立預約（單本）
     public ReservationEntity createReservation(ReservationDTO dto) {
+        // 1. 檢查 bookId
+        if (dto.getBookId() == null) {
+            throw new RuntimeException("資料缺失");
+        }
+        // 2. 檢查是否已預約過（PENDING 狀態）
+        boolean alreadyReserved = reservationRepository
+            .findByUserId(dto.getUserId()).stream()
+            .anyMatch(r -> r.getBook() != null && r.getBook().getBookId().equals(dto.getBookId()) && "PENDING".equals(r.getStatus()));
+        if (alreadyReserved) {
+            throw new RuntimeException("已預約過");
+        }
+        // 3. 檢查書籍是否已借出
+        boolean isBorrowed = borrowRepository.existsActiveBookBorrow(dto.getUserId(), dto.getBookId());
+        if (isBorrowed) {
+            throw new RuntimeException("書籍已借出");
+        }
         ReservationEntity entity = new ReservationEntity();
         entity.setUserId(dto.getUserId());
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : "PENDING");
@@ -90,13 +110,9 @@ public class ReservationService {
         }
         
         // 關聯書籍
-        if (dto.getBookId() != null) {
-            tw.ispan.librarysystem.entity.books.BookEntity book = new tw.ispan.librarysystem.entity.books.BookEntity();
-            book.setBookId(dto.getBookId());
-            entity.setBook(book);
-        } else {
-            throw new RuntimeException("bookId 不可為空");
-        }
+        tw.ispan.librarysystem.entity.books.BookEntity book = new tw.ispan.librarysystem.entity.books.BookEntity();
+        book.setBookId(dto.getBookId());
+        entity.setBook(book);
         
         return reservationRepository.save(entity);
     }
