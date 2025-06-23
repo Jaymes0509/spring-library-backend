@@ -145,16 +145,14 @@ public class BookService {
                             p = cb.like(cb.lower(root.get("classification")),"%" + cls + "%");
                             break;
                         case "publishdate":
-                            String from = valNode.has("from") ? valNode.get("from").asText() : null;
-                            String to = valNode.has("to") ? valNode.get("to").asText() : null;
+                            Integer from = (valNode.has("from") && !valNode.get("from").asText().isEmpty()) ? valNode.get("from").asInt() : null;
+                            Integer to = (valNode.has("to") && !valNode.get("to").asText().isEmpty()) ? valNode.get("to").asInt() : null;
                             Predicate datePred = null;
-                            if (from != null && !from.isEmpty()) {
-                                datePred = cb.greaterThanOrEqualTo(
-                                    cb.substring(root.get("publishdate"), 1, 4), from);
+                            if (from != null) {
+                                datePred = cb.greaterThanOrEqualTo(root.get("publishdate"), from);
                             }
-                            if (to != null && !to.isEmpty()) {
-                                Predicate toPred = cb.lessThanOrEqualTo(
-                                    cb.substring(root.get("publishdate"), 1, 4), to);
+                            if (to != null) {
+                                Predicate toPred = cb.lessThanOrEqualTo(root.get("publishdate"), to);
                                 datePred = (datePred == null) ? toPred : cb.and(datePred, toPred);
                             }
                             p = datePred;
