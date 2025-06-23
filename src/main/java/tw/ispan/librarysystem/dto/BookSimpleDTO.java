@@ -7,9 +7,9 @@ public class BookSimpleDTO {
     private String author;
     private String imgUrl;
     private String publisher;
-    private String publishdate;
+    private Integer publishdate;
 
-    public BookSimpleDTO(Integer bookId, String isbn, String title, String author, String imgUrl, String publisher, String publishdate) {
+    public BookSimpleDTO(Integer bookId, String isbn, String title, String author, String imgUrl, String publisher, Integer publishdate) {
         this.bookId = bookId;
         this.isbn = isbn;
         this.title = title;
@@ -25,7 +25,7 @@ public class BookSimpleDTO {
     public String getAuthor() { return author; }
     public String getImgUrl() { return imgUrl; }
     public String getPublisher() { return publisher; }
-    public String getPublishdate() { return publishdate; }
+    public Integer getPublishdate() { return publishdate; }
 
     public void setBookId(Integer bookId) { this.bookId = bookId; }
     public void setIsbn(String isbn) { this.isbn = isbn; }
@@ -33,5 +33,5 @@ public class BookSimpleDTO {
     public void setAuthor(String author) { this.author = author; }
     public void setImgUrl(String imgUrl) { this.imgUrl = imgUrl; }
     public void setPublisher(String publisher) { this.publisher = publisher; }
-    public void setPublishdate(String publishdate) { this.publishdate = publishdate; }
+    public void setPublishdate(Integer publishdate) { this.publishdate = publishdate; }
 } 
