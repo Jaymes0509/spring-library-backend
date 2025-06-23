@@ -14,6 +14,7 @@ import tw.ispan.librarysystem.dto.SearchCondition;
 import jakarta.persistence.criteria.Predicate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,7 +26,7 @@ public class ManagerBookService {
 
     // 進階搜尋
     public Page<BookEntity> searchBooks(String title, String author, String publisher, String isbn,
-                                        String classification, String yearFrom, String yearTo, String language, Pageable pageable) {
+                                        String classification, LocalDate yearFrom, LocalDate yearTo, String language, Pageable pageable) {
         return bookRepository.searchBooks(title, author, publisher, isbn, classification, yearFrom, yearTo, language,
                 pageable);
     }

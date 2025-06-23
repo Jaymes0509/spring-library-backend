@@ -2,11 +2,17 @@ package tw.ispan.librarysystem.controller.seat;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tw.ispan.librarysystem.dto.seat.SeatReservationRequest;
 import tw.ispan.librarysystem.enums.TimeSlot;
+import tw.ispan.librarysystem.repository.seat.SeatReservationRepository;
 import tw.ispan.librarysystem.service.seat.SeatReservationService;
+import tw.ispan.librarysystem.exception.SeatAlreadyReservedException;
+import tw.ispan.librarysystem.exception.UserAlreadyReservedException;
+import tw.ispan.librarysystem.entity.seat.SeatReservation;
+
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,6 +24,10 @@ public class SeatReservationController {
 
     @Autowired
     private SeatReservationService seatReservationService;
+
+    @Autowired
+    private SeatReservationRepository reservationRepo;
+
 
     @GetMapping("/occupied")
     public List<String> getReservedSeats(
@@ -31,22 +41,60 @@ public class SeatReservationController {
     public ResponseEntity<String> bookSeat(@RequestBody SeatReservationRequest request) {
         System.out.println("📥 收到預約請求：" + request);
 
-        String result = seatReservationService.reserveSeat(request);
-        if (result.contains("成功")) return ResponseEntity.ok(result);
-        if (result.contains("預約")) return ResponseEntity.status(409).body(result);
-        return ResponseEntity.badRequest().body(result);
+        try {
+            String result = seatReservationService.reserveSeat(request);
+            return ResponseEntity.ok(result); // 成功
+
+        } catch (SeatAlreadyReservedException e) {
+            // 該座位已被預約
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("⚠️ 該座位已被預約");
+        } catch (UserAlreadyReservedException e) {
+            // 使用者已預約過此時段
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("⚠️ 您已預約同一時段的");
+
+        } catch (IllegalArgumentException e) {
+            // 傳入參數錯誤（如找不到座位標籤）
+            return ResponseEntity.badRequest().body("❌ 錯誤請求：" + e.getMessage());
+
+        } catch (Exception e) {
+            // 其他未知錯誤
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("❌ 系統錯誤，請稍後再試");
+        }
+    }
+
+    @GetMapping("/check")
+    public ResponseEntity<Boolean> checkUserReserved(
+            @RequestParam Integer userId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam String timeSlot
+    ) {
+        TimeSlot slot = TimeSlot.fromLabel(timeSlot);
+        boolean exists = reservationRepo.existsByUserIdAndReservationDateAndTimeSlotAndStatus(
+                userId, date, slot, SeatReservation.Status.RESERVED
+        );
+        return ResponseEntity.ok(exists);
     }
 
 
     @PutMapping("/cancel")
-    public ResponseEntity<String> cancelReservation(
+    public ResponseEntity<String> cancelByUser(
+            @RequestParam Integer userId,
             @RequestParam String seatLabel,
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam TimeSlot timeSlot
+            @RequestParam("timeSlot") String timeSlotStr //  先接字串
     ) {
-        String result = seatReservationService.cancelReservation(seatLabel, date, timeSlot);
-        if (result.contains("成功")) return ResponseEntity.ok(result);
-        return ResponseEntity.badRequest().body(result);
+        try {
+            TimeSlot timeSlot = TimeSlot.fromLabel(timeSlotStr); //  再轉 enum
+            String result = seatReservationService.cancelReservationByUser(userId, seatLabel, date, timeSlot);
+
+            if (result.contains("成功")) return ResponseEntity.ok(result);
+            return ResponseEntity.badRequest().body(result);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("❌ 無效的時段：" + timeSlotStr);
+        }
     }
 }
+
 
