@@ -28,7 +28,7 @@ public class ReservationLogService {
 
         // 2. 檢查是否已有相同的預約
         if (reservationLogRepository.existsByUserIdAndBookIdAndStatus(userId, bookId, "PENDING")) {
-            throw new RuntimeException("此書籍已在預約清單中");
+            throw new RuntimeException("已預約過");
         }
 
         // 3. 建立新的預約日誌
@@ -66,5 +66,42 @@ public class ReservationLogService {
     @Deprecated
     public List<ReservationLogEntity> getUserLogs(Long userId) {
         return getLogsByUserId(userId);
+    }
+
+    /**
+     * 刪除單個預約日誌
+     * @param logId 日誌ID
+     * @return 是否刪除成功
+     */
+    public boolean deleteLogById(Long logId) {
+        try {
+            if (reservationLogRepository.existsById(logId)) {
+                reservationLogRepository.deleteById(logId);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            throw new RuntimeException("資料缺失");
+        }
+    }
+
+    /**
+     * 批量刪除預約日誌
+     * @param logIds 日誌ID列表
+     * @return 刪除成功的數量
+     */
+    public int deleteLogsByIds(List<Long> logIds) {
+        try {
+            int deletedCount = 0;
+            for (Long logId : logIds) {
+                if (reservationLogRepository.existsById(logId)) {
+                    reservationLogRepository.deleteById(logId);
+                    deletedCount++;
+                }
+            }
+            return deletedCount;
+        } catch (Exception e) {
+            throw new RuntimeException("資料缺失");
+        }
     }
 } 

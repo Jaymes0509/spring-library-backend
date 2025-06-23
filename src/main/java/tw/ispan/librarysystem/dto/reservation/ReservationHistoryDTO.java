@@ -38,6 +38,12 @@ public class ReservationHistoryDTO {
     @JsonProperty("batch_id")
     private String batchId;
 
+    @JsonProperty("pickup_location")
+    private String pickupLocation;
+    
+    @JsonProperty("pickup_method")
+    private String pickupMethod;
+
     // 無參數建構子
     public ReservationHistoryDTO() {}
 
@@ -46,7 +52,8 @@ public class ReservationHistoryDTO {
                                 String title, String author, String isbn, String publisher,
                                 String categoryName, LocalDateTime reserveTime, 
                                 LocalDateTime expiryDate, String status, 
-                                LocalDateTime createdAt, LocalDateTime updatedAt, String batchId) {
+                                LocalDateTime createdAt, LocalDateTime updatedAt, String batchId,
+                                String pickupLocation, String pickupMethod) {
         this.reservationId = reservationId;
         this.userId = userId;
         this.bookId = bookId;
@@ -61,6 +68,8 @@ public class ReservationHistoryDTO {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.batchId = batchId;
+        this.pickupLocation = pickupLocation;
+        this.pickupMethod = pickupMethod;
     }
 
     // Getters and Setters
@@ -105,4 +114,10 @@ public class ReservationHistoryDTO {
 
     public String getBatchId() { return batchId; }
     public void setBatchId(String batchId) { this.batchId = batchId; }
+
+    public String getPickupLocation() { return pickupLocation; }
+    public void setPickupLocation(String pickupLocation) { this.pickupLocation = pickupLocation; }
+
+    public String getPickupMethod() { return pickupMethod; }
+    public void setPickupMethod(String pickupMethod) { this.pickupMethod = pickupMethod; }
 } 

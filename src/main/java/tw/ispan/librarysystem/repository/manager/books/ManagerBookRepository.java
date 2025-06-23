@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import tw.ispan.librarysystem.entity.books.BookEntity;
+
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,8 +36,8 @@ public interface ManagerBookRepository
             "(:publisher       IS NULL OR LOWER(b.publisher)   LIKE LOWER(CONCAT('%', :publisher, '%'))) AND " +
             "(:isbn            IS NULL OR b.isbn               LIKE CONCAT('%', :isbn, '%')) AND " +
             "(:classification  IS NULL OR b.classification     = :classification) AND " +
-            "(:yearFrom       IS NULL OR SUBSTRING(b.publishdate,1,4) >= :yearFrom) AND " +
-            "(:yearTo         IS NULL OR SUBSTRING(b.publishdate,1,4) <= :yearTo) AND " +
+            "(:yearFrom       IS NULL OR b.publishdate >= :yearFrom) AND " +
+            "(:yearTo         IS NULL OR b.publishdate <= :yearTo) AND " +
             "(:language        IS NULL OR b.language          = :language)")
     Page<BookEntity> searchBooks(
             @Param("title") String title,
@@ -43,8 +45,8 @@ public interface ManagerBookRepository
             @Param("publisher") String publisher,
             @Param("isbn") String isbn,
             @Param("classification") String classification,
-            @Param("yearFrom") String yearFrom,
-            @Param("yearTo") String yearTo,
+            @Param("yearFrom") LocalDate  yearFrom,
+            @Param("yearTo") LocalDate yearTo,
             @Param("language") String language,
             Pageable pageable);
 }
