@@ -1,6 +1,8 @@
 // @SuppressWarnings("SpellCheckingInspection")
 package tw.ispan.librarysystem.controller.reservation;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,19 +15,18 @@ import tw.ispan.librarysystem.dto.reservation.ApiResponse;
 import tw.ispan.librarysystem.entity.reservation.ReservationEntity;
 import tw.ispan.librarysystem.entity.reservation.ReservationLogEntity;
 import tw.ispan.librarysystem.repository.reservation.ReservationRepository;
-import tw.ispan.librarysystem.repository.books.BookRepository;
 import tw.ispan.librarysystem.service.reservation.ReservationService;
 import tw.ispan.librarysystem.service.reservation.ReservationLogService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
 
+@Tag(name = "書籍預約管理", description = "提供書籍預約的完整功能，包括單本預約、批量預約、取消預約、預約歷史查詢等")
 @RestController
 @RequestMapping("/api/bookreservations")
 @CrossOrigin(origins = "http://localhost:3000")
@@ -35,15 +36,13 @@ public class ReservationController {
     private ReservationRepository reservationRepository;
     
     @Autowired
-    private BookRepository bookRepository;
-    
-    @Autowired
     private ReservationService reservationService;
     
     @Autowired
     private ReservationLogService reservationLogService;
 
     // 查詢用戶預約清單
+    @Operation(summary = "查詢用戶預約清單")
     @GetMapping
     public ResponseEntity<List<ReservationDTO>> getReservationsByUserId(@RequestParam String userId) {
         try {
@@ -66,6 +65,7 @@ public class ReservationController {
     }
 
     // 查詢單筆預約
+    @Operation(summary = "查詢單筆預約紀錄")
     @GetMapping("/{reservationId}")
     public ResponseEntity<ReservationDTO> getReservationById(@PathVariable Integer reservationId) {
         return reservationService.getReservationById(reservationId)
@@ -74,12 +74,14 @@ public class ReservationController {
     }
 
     // 查詢某本書的所有預約
+    @Operation(summary = "查詢某本書的所有預約紀錄")
     @GetMapping("/book/{bookId}")
     public List<ReservationDTO> getReservationsByBookId(@PathVariable Integer bookId) {
         return reservationService.getReservationsByBookId(bookId);
     }
 
     // 單本預約
+    @Operation(summary = "單本書籍預約")
     @PostMapping
     public ResponseEntity<ReservationResponseDTO> createReservation(@RequestBody ReservationDTO dto) {
         ReservationResponseDTO response = new ReservationResponseDTO();
@@ -111,6 +113,7 @@ public class ReservationController {
     }
 
     // 批量預約
+    @Operation(summary = "批量預約多本書籍")
     @PostMapping("/batch")
     public ResponseEntity<ReservationResponseDTO> batchReservation(@RequestBody ReservationBatchRequestDTO batchDto) {
         ReservationResponseDTO response = new ReservationResponseDTO();
@@ -174,6 +177,7 @@ public class ReservationController {
     }
 
     // 取消預約
+    @Operation(summary = "取消單筆預約")
     @DeleteMapping("/{reservationId}")
     public ResponseEntity<?> deleteReservation(@PathVariable Integer reservationId) {
         return reservationRepository.findById(reservationId)
@@ -190,6 +194,7 @@ public class ReservationController {
     }
 
     // 取消預約 API
+    @Operation(summary = "將預約狀態設為取消")
     @PutMapping("/{reservationId}/cancel")
     public ResponseEntity<?> cancelReservation(@PathVariable Integer reservationId) {
         try {
@@ -225,6 +230,7 @@ public class ReservationController {
     }
 
     // 狀態轉換
+    @Operation(summary = "更新預約狀態")
     @PutMapping("/{reservationId}/status")
     public ResponseEntity<?> updateReservationStatus(@PathVariable Integer reservationId, @RequestBody ReservationDTO dto) {
         return reservationRepository.findById(reservationId)
@@ -238,6 +244,7 @@ public class ReservationController {
     }
 
     // 批量刪除預約
+    @Operation(summary = "批量刪除預約紀錄")
     @DeleteMapping("/batch")
     public ResponseEntity<?> batchDeleteReservations(@RequestBody BatchDeleteRequest request) {
         try {
@@ -249,6 +256,7 @@ public class ReservationController {
     }
 
     // 批量取消預約
+    @Operation(summary = "批量取消預約紀錄")
     @PutMapping("/batch/cancel")
     public ResponseEntity<?> batchCancelReservations(@RequestBody BatchDeleteRequest request) {
         try {
@@ -279,6 +287,7 @@ public class ReservationController {
     }
 
     // 新的批量取消預約 API 端點
+    @Operation(summary = "新的批量取消預約 API")
     @PutMapping("/batch-cancel")
     public ResponseEntity<?> batchCancelReservationsNew(@RequestBody BatchCancelRequest request) {
         try {
@@ -307,6 +316,7 @@ public class ReservationController {
     }
 
     // 新增：預約歷史查詢 API
+    @Operation(summary = "查詢預約歷史紀錄")
     @GetMapping("/history")
     public ResponseEntity<List<ReservationHistoryDTO>> getReservationHistory(
         @RequestParam(required = false) String userId,
@@ -328,6 +338,7 @@ public class ReservationController {
         }
     }
 
+    @Operation(summary = "確認預約")
     @PostMapping("/confirm")
     public ResponseEntity<ApiResponse> confirmReservation(@RequestBody ReservationConfirmRequest request) {
         try {
