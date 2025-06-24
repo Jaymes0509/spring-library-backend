@@ -26,7 +26,7 @@ public class ManagerBookService {
 
     // 進階搜尋
     public Page<BookEntity> searchBooks(String title, String author, String publisher, String isbn,
-                                        String classification, LocalDate yearFrom, LocalDate yearTo, String language, Pageable pageable) {
+            String classification, Integer yearFrom, Integer yearTo, String language, Pageable pageable) {
         return bookRepository.searchBooks(title, author, publisher, isbn, classification, yearFrom, yearTo, language,
                 pageable);
     }

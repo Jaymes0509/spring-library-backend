@@ -38,8 +38,8 @@ public interface ManagerBookRepository
                         +
                         "(:isbn            IS NULL OR b.isbn               LIKE CONCAT('%', :isbn, '%')) AND " +
                         "(:classification  IS NULL OR b.classification     = :classification) AND " +
-                        "(:yearFrom       IS NULL OR SUBSTRING(b.publishdate,1,4) >= :yearFrom) AND " +
-                        "(:yearTo         IS NULL OR SUBSTRING(b.publishdate,1,4) <= :yearTo) AND " +
+                        "(:yearFrom       IS NULL OR b.publishdate >= :yearFrom) AND " +
+                        "(:yearTo         IS NULL OR b.publishdate <= :yearTo) AND " +
                         "(:language        IS NULL OR b.language          = :language)")
         Page<BookEntity> searchBooks(
                         @Param("title") String title,
@@ -47,8 +47,8 @@ public interface ManagerBookRepository
                         @Param("publisher") String publisher,
                         @Param("isbn") String isbn,
                         @Param("classification") String classification,
-                        @Param("yearFrom") String yearFrom,
-                        @Param("yearTo") String yearTo,
+                        @Param("yearFrom") Integer yearFrom,
+                        @Param("yearTo") Integer yearTo,
                         @Param("language") String language,
                         Pageable pageable);
 }
