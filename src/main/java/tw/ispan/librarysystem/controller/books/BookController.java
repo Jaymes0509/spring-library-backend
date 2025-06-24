@@ -102,7 +102,8 @@ public class BookController {
             }
             
             // 獲取用戶ID（這裡使用預設值，實際應用中應該從認證系統獲取）
-            Integer userId = request != null ? request.getUserId() : 1;
+//            Long userId = request != null ? request.getUserId() : 1;
+            Long userId = request != null ? Long.valueOf(request.getUserId()) : 1L;
             
             // 執行借書
             Borrow borrow = borrowService.borrowBook(userId, bookId);

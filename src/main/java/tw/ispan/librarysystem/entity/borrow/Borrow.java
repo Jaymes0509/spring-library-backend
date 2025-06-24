@@ -20,7 +20,7 @@ public class Borrow {
     private Integer borrowId;
 
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private Long userId;
 
     @Column(name = "book_id", nullable = false)
     private Integer bookId;

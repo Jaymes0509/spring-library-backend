@@ -1,9 +1,11 @@
 package tw.ispan.librarysystem.repository.seat;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import tw.ispan.librarysystem.entity.seat.SeatReservation;
-import tw.ispan.librarysystem.entity.seat.SeatStatus;
+import tw.ispan.librarysystem.entity.seat.Seat;
+import tw.ispan.librarysystem.enums.SeatStatus;
 import tw.ispan.librarysystem.enums.TimeSlot;
 
 import java.time.LocalDate;
@@ -29,7 +31,7 @@ public interface SeatReservationRepository extends JpaRepository<SeatReservation
 
 
     boolean existsBySeatAndReservationDateAndTimeSlotAndStatus(
-            SeatStatus seat, LocalDate date, TimeSlot timeSlot, SeatReservation.Status status
+            Seat seat, LocalDate date, TimeSlot timeSlot, SeatReservation.Status status
     );
 
     List<SeatReservation> findBySeatAndReservationDateAndTimeSlotAndStatus(
@@ -56,5 +58,15 @@ public interface SeatReservationRepository extends JpaRepository<SeatReservation
     // 查詢單筆預約以便進行取消
     SeatReservation findBySeat_IdAndReservationDateAndTimeSlot(
             Integer seatId, LocalDate date, TimeSlot slot);
+
+    //這個查詢會檢查：是否有「指定座位」的預約，日期是今天或未來,  確保 SeatReservation entity 裡有 seat（多對一關聯）跟 reservationDate 欄位，否則這查詢會錯。
+    @Query("SELECT COUNT(r) > 0 FROM SeatReservation r WHERE r.seat.seatLabel = :label AND r.reservationDate >= CURRENT_DATE")
+    boolean existsBySeatLabelAndDateFromToday(@Param("label") String label);
+
+    //查詢有未來預約的座位
+    @Query("SELECT DISTINCT r.seat.seatLabel FROM SeatReservation r WHERE r.reservationDate >= CURRENT_DATE")
+    List<String> findUpcomingSeatLabels();
+
+
 }
 

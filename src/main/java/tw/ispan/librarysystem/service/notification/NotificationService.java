@@ -16,7 +16,7 @@ public class NotificationService {
     
     private final NotificationRepository notificationRepository;
 
-    public void sendRenewalNotification(Integer userId, String bookTitle, LocalDateTime newDueDate) {
+    public void sendRenewalNotification(Long userId, String bookTitle, LocalDateTime newDueDate) {
         logger.info("發送續借成功通知 - 使用者ID: {}, 書籍: {}", userId, bookTitle);
         
         Notification notification = new Notification();

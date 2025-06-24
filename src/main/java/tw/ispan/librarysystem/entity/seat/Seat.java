@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "seat_status")
-public class SeatStatus {
+public class Seat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "s_id")
@@ -16,10 +16,10 @@ public class SeatStatus {
     private String seatLabel;
 
     @Enumerated(EnumType.STRING)
-    private Status status;
+    private Status status;//這裡 Status 是 enum（AVAILABLE / BROKEN）
 
     public enum Status {
-        AVAILABLE, RESERVED, BROKEN
+        AVAILABLE, BROKEN, RESERVED
     }
 
 }

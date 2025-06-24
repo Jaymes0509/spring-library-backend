@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Data
 public class BorrowResponseDto {
     private Integer borrowId;
-    private Integer userId;
+    private Long userId;
     private Integer bookId;
     private LocalDateTime borrowDate;
     private LocalDateTime dueDate;
