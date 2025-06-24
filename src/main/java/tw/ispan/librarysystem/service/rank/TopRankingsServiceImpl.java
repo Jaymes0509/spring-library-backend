@@ -1,7 +1,7 @@
 package tw.ispan.librarysystem.service.rank;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import tw.ispan.librarysystem.dto.rank.TopRankingsBookDto;
@@ -13,55 +13,55 @@ import java.util.List;
 @Service
 public class TopRankingsServiceImpl implements TopRankingsService {
 
-    private final TopRankingsRepository topRankingsRepository;
-
     @Autowired
-    public TopRankingsServiceImpl(TopRankingsRepository topRankingsRepository) {
-        this.topRankingsRepository = topRankingsRepository;
-    }
+    private TopRankingsRepository topRankingsRepository;
 
-    // 📘 首頁總覽榜單
+    // 📘 首頁總覽（預約 + 借閱 + 評分）
     @Override
     public TopRankingsDto getTopRankings(Integer categoryId, Integer year, Integer month) {
-        Pageable top10 = PageRequest.of(0, 10);
+        Pageable top10 = Pageable.ofSize(10);
 
-        List<TopRankingsBookDto> reservationRanking =
-                topRankingsRepository.findTopRankingsByReservations(top10);
+        List<TopRankingsBookDto> reservationList = topRankingsRepository.findTopRankingsByReservations(top10);
+        List<TopRankingsBookDto> borrowList = topRankingsRepository.findTopRankingsByBorrows(top10);
+        double m = 5.0;      // 平均參考數
+        double c = 3;      // 平均分數
+        long minReviews = 1; // 最少評論門檻
+        List<TopRankingsBookDto> ratingList = topRankingsRepository.findTopRankingsByRatings(m, c, minReviews, top10);
 
-        List<TopRankingsBookDto> borrowRanking =
-                topRankingsRepository.findTopRankingsByBorrows(categoryId, year, month, top10);
-
-        double m = 5.0;
-        double c = 3.0;
-        long minReviewCount = 10;
-
-        List<TopRankingsBookDto> ratingRanking =
-                topRankingsRepository.findTopRankingsByRatings(m, c, minReviewCount, top10);
-
-        return new TopRankingsDto(reservationRanking, borrowRanking, ratingRanking);
+        return new TopRankingsDto(reservationList, borrowList, ratingList);
     }
 
-    // 🔍 詳細條件搜尋榜單
+    // 🔍 詳細查詢（根據 type 呼叫對應方法）
     @Override
-    public List<TopRankingsBookDto> getDetailedRanking(
+    public Page<TopRankingsBookDto> getDetailedRanking(
             String type,
             Integer categoryId,
             Integer year,
             Integer month,
-            String keyword
+            String keyword,
+            Pageable pageable
     ) {
-        Pageable top10 = PageRequest.of(0, 10);
+        switch (type.toLowerCase()) {
+            case "reservation":
+                return topRankingsRepository.findTopRankingsByReservationCondition(
+                        categoryId, year, month, keyword, pageable
+                );
 
-        return switch (type) {
-            case "reservation" -> topRankingsRepository.findTopRankingsByReservationCondition(categoryId, year, month, keyword, top10);
-            case "borrow" -> topRankingsRepository.findDetailedBorrows(categoryId, year, month, keyword, top10);
-            case "rating" -> {
+            case "borrow":
+                return topRankingsRepository.findDetailedBorrows(
+                        categoryId, year, month, keyword, pageable
+                );
+
+            case "rating":
                 double m = 5.0;
-                double c = 3.0;
-                long minReviewCount = 10;
-                yield topRankingsRepository.findDetailedRatings(categoryId, year, month, keyword, m, c, minReviewCount, top10);
-            }
-            default -> throw new IllegalArgumentException("Invalid ranking type: " + type);
-        };
+                double c = 3;
+                long minReviewCount = 1;
+                return topRankingsRepository.findDetailedRatings(
+                        categoryId, year, month, keyword, m, c, minReviewCount, pageable
+                );
+
+            default:
+                throw new IllegalArgumentException("Unknown type: " + type);
+        }
     }
 }

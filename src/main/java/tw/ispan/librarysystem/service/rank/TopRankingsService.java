@@ -2,8 +2,8 @@ package tw.ispan.librarysystem.service.rank;
 
 import tw.ispan.librarysystem.dto.rank.TopRankingsBookDto;
 import tw.ispan.librarysystem.dto.rank.TopRankingsDto;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface TopRankingsService {
 
@@ -11,11 +11,13 @@ public interface TopRankingsService {
     TopRankingsDto getTopRankings(Integer categoryId, Integer year, Integer month);
 
     // 🔍 詳細搜尋用（/detail）
-    List<TopRankingsBookDto> getDetailedRanking(
+    Page<TopRankingsBookDto> getDetailedRanking(
             String type,
             Integer categoryId,
             Integer year,
             Integer month,
-            String keyword
+            String keyword,
+            Pageable pageable
     );
+
 }
