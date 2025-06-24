@@ -1,3 +1,4 @@
+// 用來裝單一筆預約的詳細資料
 package tw.ispan.librarysystem.dto.reservation;
 
 import java.time.LocalDateTime;

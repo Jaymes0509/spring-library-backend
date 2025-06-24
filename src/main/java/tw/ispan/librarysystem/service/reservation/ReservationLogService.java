@@ -1,3 +1,4 @@
+// 預約日誌服務層，處理預約日誌相關的商業邏輯
 package tw.ispan.librarysystem.service.reservation;
 
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,3 +1,4 @@
+// 用來裝 API 回傳的狀態和訊息
 package tw.ispan.librarysystem.dto.reservation;
 
 import com.fasterxml.jackson.annotation.JsonInclude;

@@ -1,3 +1,4 @@
+// 用來裝確認預約時要送出的資料
 package tw.ispan.librarysystem.dto.reservation;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
