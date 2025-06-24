@@ -20,7 +20,6 @@ import tw.ispan.librarysystem.dto.borrow.BorrowBatchRequestDto;
 import tw.ispan.librarysystem.dto.borrow.BorrowBatchResponseDto;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -170,9 +169,10 @@ public class BorrowService {
             }
 
             // 使用原生 SQL 查詢來提高效能
-            String sql = "SELECT b.*, bk.title, bk.author, bk.isbn, m.name, m.email " +
+            String sql = "SELECT b.*, bk.title, bk.author, bk.isbn, m.name, m.email, bd.img_url " +
                         "FROM borrow_records b " +
                         "LEFT JOIN books bk ON b.book_id = bk.book_id " +
+                        "LEFT JOIN bookdetail bd ON bk.book_id = bd.book_id " +
                         "LEFT JOIN members m ON b.user_id = m.user_id " +
                         "WHERE b.user_id = ? " +
                         "ORDER BY b.borrow_date DESC " +
@@ -197,6 +197,11 @@ public class BorrowService {
                 book.setTitle(rs.getString("title"));
                 book.setAuthor(rs.getString("author"));
                 book.setIsbn(rs.getString("isbn"));
+                // 新增：設置 BookDetailEntity 並帶入 imgUrl
+                tw.ispan.librarysystem.entity.books.BookDetailEntity detail = new tw.ispan.librarysystem.entity.books.BookDetailEntity();
+                detail.setBookId(rs.getInt("book_id"));
+                detail.setImgUrl(rs.getString("img_url"));
+                book.setBookDetail(detail);
                 borrow.setBook(book);
                 
                 Member member = new Member();
