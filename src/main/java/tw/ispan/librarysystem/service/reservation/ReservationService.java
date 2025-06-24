@@ -106,7 +106,7 @@ public class ReservationService {
             throw new RuntimeException("已預約過");
         }
         // 3. 檢查書籍是否已借出
-        boolean isBorrowed = borrowRepository.existsActiveBookBorrow(dto.getUserId(), dto.getBookId());
+        boolean isBorrowed = borrowRepository.existsActiveBookBorrow(dto.getUserId().longValue(), dto.getBookId());
         if (isBorrowed) {
             throw new RuntimeException("書籍已借出");
         }

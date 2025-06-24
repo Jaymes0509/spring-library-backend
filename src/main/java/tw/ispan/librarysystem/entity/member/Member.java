@@ -19,7 +19,7 @@ public class Member {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id") // 告訴 JPA 對應到 user_id 欄位
-    private Integer id;
+    private Long id;
 
     private String name;
     private String gender;
