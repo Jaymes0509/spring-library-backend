@@ -10,7 +10,7 @@ public class LibrarySystemApplication {
     public static void main(String[] args) {
         System.out.println("======================== Library System Starting ========================");
         SpringApplication.run(LibrarySystemApplication.class, args);
-        System.out.println("======================== Library System Starup ok ========================");
+        System.out.println("======================== Library System Startup ok ========================");
     }
 }
 //

@@ -23,7 +23,6 @@ import tw.ispan.librarysystem.dto.SearchCondition;
 import tw.ispan.librarysystem.dto.BookSimpleDTO;
 import tw.ispan.librarysystem.entity.books.BookEntity;
 import tw.ispan.librarysystem.mapper.BookMapper;
-import tw.ispan.librarysystem.repository.books.BookRepository;
 import tw.ispan.librarysystem.service.books.BookDetailService;
 import tw.ispan.librarysystem.service.books.BookService;
 
