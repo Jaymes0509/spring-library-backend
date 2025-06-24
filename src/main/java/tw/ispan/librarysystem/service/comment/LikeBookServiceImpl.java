@@ -16,11 +16,11 @@ public class LikeBookServiceImpl implements LikeBookService {
 
     @Override
     @Transactional
-    public boolean likeComment(Integer commentId, Integer memberId) {
+    public boolean likeComment(Integer commentId, Integer userId) {
         try {
-            System.out.println("[LikeBookService] likeComment called with commentId=" + commentId + ", memberId=" + memberId);
+            System.out.println("[LikeBookService] likeComment called with commentId=" + commentId + ", userId=" + userId);
 
-            Optional<LikeBook> existing = likeBookRepository.findByCommentIdAndMemberId(commentId, memberId);
+            Optional<LikeBook> existing = likeBookRepository.findByCommentIdAndUserId(commentId, userId);
             if (existing.isPresent()) {
                 System.out.println("[LikeBookService] User has already liked this comment.");
                 return false;
@@ -28,7 +28,7 @@ public class LikeBookServiceImpl implements LikeBookService {
 
             LikeBook like = new LikeBook();
             like.setCommentId(commentId);
-            like.setMemberId(memberId);
+            like.setUserId(userId);
 
             likeBookRepository.save(like);
 
@@ -45,17 +45,17 @@ public class LikeBookServiceImpl implements LikeBookService {
 
     @Override
     @Transactional
-    public boolean unlikeComment(Integer commentId, Integer memberId) {
+    public boolean unlikeComment(Integer commentId, Integer userId) {
         try {
-            System.out.println("[LikeBookService] unlikeComment called with commentId=" + commentId + ", memberId=" + memberId);
+            System.out.println("[LikeBookService] unlikeComment called with commentId=" + commentId + ", userId=" + userId);
 
-            Optional<LikeBook> existing = likeBookRepository.findByCommentIdAndMemberId(commentId, memberId);
+            Optional<LikeBook> existing = likeBookRepository.findByCommentIdAndUserId(commentId, userId);
             if (existing.isEmpty()) {
                 System.out.println("[LikeBookService] No like record found to delete.");
                 return false;
             }
 
-            likeBookRepository.deleteByCommentIdAndMemberId(commentId, memberId);
+            likeBookRepository.deleteByCommentIdAndUserId(commentId, userId);
 
             System.out.println("[LikeBookService] Like removed successfully.");
 
@@ -74,7 +74,7 @@ public class LikeBookServiceImpl implements LikeBookService {
     }
 
     @Override
-    public boolean hasUserLiked(Integer commentId, Integer memberId) {
-        return likeBookRepository.findByCommentIdAndMemberId(commentId, memberId).isPresent();
+    public boolean hasUserLiked(Integer commentId, Integer userId) {
+        return likeBookRepository.findByCommentIdAndUserId(commentId, userId).isPresent();
     }
 }

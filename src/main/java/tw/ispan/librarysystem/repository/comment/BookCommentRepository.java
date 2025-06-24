@@ -13,4 +13,7 @@ public interface BookCommentRepository extends JpaRepository<BookComment, Intege
     Optional<BookComment> findByBookIdAndUserId(Integer bookId, Integer userId);
 
     List<BookComment> findByBookIdOrderByCreatedAtDesc(Integer bookId);
+
+    // 新增此方法：依 userId 查詢該用戶所有書評（時間倒序）
+    List<BookComment> findByUserIdOrderByCreatedAtDesc(Integer userId);
 }

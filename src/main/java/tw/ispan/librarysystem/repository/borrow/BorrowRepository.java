@@ -50,4 +50,40 @@ public interface BorrowRepository extends JpaRepository<Borrow, Integer> {
     // 檢查是否有未歸還的借閱
     @Query("SELECT COUNT(b) > 0 FROM Borrow b WHERE b.userId = :userId AND b.bookId = :bookId AND b.status IN ('BORROWED', 'RENEWED')")
     boolean existsActiveBookBorrow(@Param("userId") Integer userId, @Param("bookId") Integer bookId);
+    
+    // 新增：根據日期範圍查詢
+    @Query("SELECT b FROM Borrow b WHERE b.userId = :userId AND b.borrowDate BETWEEN :startDate AND :endDate ORDER BY b.borrowDate DESC")
+    List<Borrow> findByUserIdAndBorrowDateBetween(
+        @Param("userId") Integer userId, 
+        @Param("startDate") LocalDateTime startDate, 
+        @Param("endDate") LocalDateTime endDate
+    );
+    
+    // 新增：查詢即將到期的借閱（3天內）
+    @Query("SELECT b FROM Borrow b WHERE b.userId = :userId AND b.dueDate BETWEEN :now AND :dueDate AND b.status IN ('BORROWED', 'RENEWED')")
+    List<Borrow> findUpcomingDueBorrows(
+        @Param("userId") Integer userId, 
+        @Param("now") LocalDateTime now, 
+        @Param("dueDate") LocalDateTime dueDate
+    );
+    
+    // 新增：查詢可續借的借閱
+    @Query("SELECT b FROM Borrow b WHERE b.userId = :userId AND b.status IN ('BORROWED', 'RENEWED') AND b.renewCount < 2 AND b.dueDate BETWEEN :startDate AND :endDate")
+    List<Borrow> findRenewableBorrows(
+        @Param("userId") Integer userId, 
+        @Param("startDate") LocalDateTime startDate, 
+        @Param("endDate") LocalDateTime endDate
+    );
+    
+    // 新增：統計用戶總借閱次數
+    @Query("SELECT COUNT(b) FROM Borrow b WHERE b.userId = :userId")
+    long countTotalBorrowsByUserId(@Param("userId") Integer userId);
+    
+    // 新增：統計用戶總續借次數
+    @Query("SELECT SUM(b.renewCount) FROM Borrow b WHERE b.userId = :userId")
+    Long sumRenewCountByUserId(@Param("userId") Integer userId);
+    
+    // 新增：查詢最常借閱的書籍
+    @Query("SELECT b.bookId, COUNT(b) as borrowCount FROM Borrow b WHERE b.userId = :userId GROUP BY b.bookId ORDER BY borrowCount DESC")
+    List<Object[]> findMostBorrowedBooksByUserId(@Param("userId") Integer userId);
 } 

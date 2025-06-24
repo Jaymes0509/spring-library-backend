@@ -1,3 +1,4 @@
+// 預約資料庫實體，對應 reservations 資料表
 package tw.ispan.librarysystem.entity.reservation;
 
 import jakarta.persistence.*;
@@ -5,8 +6,13 @@ import java.time.LocalDateTime;
 import tw.ispan.librarysystem.entity.books.BookEntity;
 
 @Entity
-@Table(name = "reservations")  // 保持 reservations 表
+@Table(name = "reservations")
 public class ReservationEntity {
+
+    // 預約狀態常量
+    public static final String STATUS_PENDING = "PENDING";
+    public static final String STATUS_COMPLETED = "COMPLETED";
+    public static final String STATUS_CANCELLED = "CANCELLED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -14,26 +20,38 @@ public class ReservationEntity {
     private Integer reservationId;
 
     @ManyToOne
-    @JoinColumn(name = "book_id", referencedColumnName = "book_id")  // 使用 book_id 關聯 BookEntity
-    private BookEntity book;  // 與 BookEntity 關聯
+    @JoinColumn(name = "book_id", referencedColumnName = "book_id")
+    private BookEntity book;
 
     @Column(name = "user_id")
     private Integer userId;
 
-    @Column(name = "reservation_date")
-    private LocalDateTime reservationDate;
+    @Column(name = "reserve_time")
+    private LocalDateTime reserveTime;
 
     @Column(name = "expiry_date")
     private LocalDateTime expiryDate;
 
     @Column(name = "status")
-    private String status;  // PENDING, COMPLETED, CANCELLED
+    private String status;  // 舊有字串型狀態欄位（如 PENDING、CANCELLED）
+
+    @Column(name = "reserve_status")
+    private Integer reserveStatus; // 0: 未完成, 1: 成功
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "batch_id")
+    private String batchId;
+
+    @Column(name = "pickup_location")
+    private String pickupLocation;
+
+    @Column(name = "pickup_method")
+    private String pickupMethod;
 
     // Getters and Setters
     public Integer getReservationId() {
@@ -60,12 +78,12 @@ public class ReservationEntity {
         this.userId = userId;
     }
 
-    public LocalDateTime getReservationDate() {
-        return reservationDate;
+    public LocalDateTime getReserveTime() {
+        return reserveTime;
     }
 
-    public void setReservationDate(LocalDateTime reservationDate) {
-        this.reservationDate = reservationDate;
+    public void setReserveTime(LocalDateTime reserveTime) {
+        this.reserveTime = reserveTime;
     }
 
     public LocalDateTime getExpiryDate() {
@@ -84,6 +102,14 @@ public class ReservationEntity {
         this.status = status;
     }
 
+    public Integer getReserveStatus() {
+        return reserveStatus;
+    }
+
+    public void setReserveStatus(Integer reserveStatus) {
+        this.reserveStatus = reserveStatus;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -98,5 +124,47 @@ public class ReservationEntity {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getBatchId() {
+        return batchId;
+    }
+
+    public void setBatchId(String batchId) {
+        this.batchId = batchId;
+    }
+
+    public String getPickupLocation() {
+        return pickupLocation;
+    }
+
+    public void setPickupLocation(String pickupLocation) {
+        this.pickupLocation = pickupLocation;
+    }
+
+    public String getPickupMethod() {
+        return pickupMethod;
+    }
+
+    public void setPickupMethod(String pickupMethod) {
+        this.pickupMethod = pickupMethod;
+    }
+
+    @Override
+    public String toString() {
+        return "ReservationEntity{" +
+                "reservationId=" + reservationId +
+                ", bookId=" + (book != null ? book.getBookId() : "null") +
+                ", userId=" + userId +
+                ", reserveTime=" + reserveTime +
+                ", expiryDate=" + expiryDate +
+                ", status='" + status + '\'' +
+                ", reserveStatus=" + reserveStatus +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                ", batchId='" + batchId + '\'' +
+                ", pickupLocation='" + pickupLocation + '\'' +
+                ", pickupMethod='" + pickupMethod + '\'' +
+                '}';
     }
 }
