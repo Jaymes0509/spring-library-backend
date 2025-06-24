@@ -15,6 +15,8 @@ import tw.ispan.librarysystem.entity.member.Member;
 import tw.ispan.librarysystem.dto.borrow.BorrowRequestDto;
 import tw.ispan.librarysystem.dto.borrow.BorrowResponseDto;
 import tw.ispan.librarysystem.dto.borrow.BorrowStatisticsDto;
+import tw.ispan.librarysystem.dto.borrow.BorrowBatchRequestDto;
+import tw.ispan.librarysystem.dto.borrow.BorrowBatchResponseDto;
 
 import java.util.HashMap;
 import java.util.List;
@@ -326,6 +328,46 @@ public class BorrowController {
         } catch (Exception e) {
             logger.error("檢查借閱限制失敗", e);
             return createErrorResponse("檢查借閱限制失敗，請稍後再試", 500);
+        }
+    }
+
+    /**
+     * 批量借書
+     */
+    @PostMapping("/batch-borrow")
+    @CheckJwt
+    public ResponseEntity<Map<String, Object>> batchBorrow(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody BorrowBatchRequestDto batchRequest) {
+        try {
+            // 從JWT token中獲取使用者email
+            String token = authHeader.replace("Bearer ", "");
+            String email = JwtTool.parseToken(token);
+            
+            // 根據email獲取會員資訊
+            Member member = memberService.getMemberByEmail(email);
+            if (member == null) {
+                return createErrorResponse("找不到會員資訊", 400);
+            }
+            
+            Integer userId = member.getId();
+            logger.info("收到批量借書請求 - 使用者ID: {}, 書籍數量: {}", userId, batchRequest.getBooks().size());
+            
+            // 執行批量借書
+            BorrowBatchResponseDto response = borrowService.batchBorrow(userId, batchRequest.getBooks());
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "批量借書完成");
+            result.put("data", response);
+            
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            logger.error("批量借書失敗", e);
+            return createErrorResponse(e.getMessage(), 400);
+        } catch (Exception e) {
+            logger.error("批量借書時發生未預期錯誤", e);
+            return createErrorResponse("批量借書失敗，請稍後再試", 500);
         }
     }
 
