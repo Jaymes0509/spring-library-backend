@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import tw.ispan.librarysystem.entity.books.BookEntity;
+
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,8 +45,9 @@ public interface ManagerBookRepository
             @Param("publisher") String publisher,
             @Param("isbn") String isbn,
             @Param("classification") String classification,
-            @Param("yearFrom") Integer yearFrom,
-            @Param("yearTo") Integer yearTo,
+            @Param("yearFrom") LocalDate  yearFrom,
+            @Param("yearTo") LocalDate yearTo,
+
             @Param("language") String language,
             Pageable pageable);
 }

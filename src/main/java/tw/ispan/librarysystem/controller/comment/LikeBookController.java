@@ -13,8 +13,8 @@ public class LikeBookController {
     private LikeBookService likeBookService;
 
     @PostMapping("/{commentId}/like")
-    public ResponseEntity<String> likeComment(@PathVariable Integer commentId, @RequestParam Integer memberId) {
-        boolean success = likeBookService.likeComment(commentId, memberId);
+    public ResponseEntity<String> likeComment(@PathVariable Integer commentId, @RequestParam Integer userId) {
+        boolean success = likeBookService.likeComment(commentId, userId);
         if (success) {
             return ResponseEntity.ok("點讚成功");
         } else {
@@ -23,12 +23,28 @@ public class LikeBookController {
     }
 
     @DeleteMapping("/{commentId}/like")
-    public ResponseEntity<String> unlikeComment(@PathVariable Integer commentId, @RequestParam Integer memberId) {
-        boolean success = likeBookService.unlikeComment(commentId, memberId);
+    public ResponseEntity<String> unlikeComment(@PathVariable Integer commentId, @RequestParam Integer userId) {
+        boolean success = likeBookService.unlikeComment(commentId, userId);
         if (success) {
             return ResponseEntity.ok("取消點讚成功");
         } else {
             return ResponseEntity.badRequest().body("您尚未對此書評點讚");
         }
     }
+
+    @GetMapping("/{commentId}/like-count")
+    public ResponseEntity<Long> getLikeCount(@PathVariable Integer commentId) {
+        long count = likeBookService.countLikes(commentId);
+        return ResponseEntity.ok(count);
+    }
+
+    @GetMapping("/{commentId}/liked")
+    public ResponseEntity<Boolean> hasUserLiked(
+            @PathVariable Integer commentId,
+            @RequestParam("userId") Integer memberId
+    ) {
+        boolean liked = likeBookService.hasUserLiked(commentId, memberId);
+        return ResponseEntity.ok(liked);
+    }
+
 }

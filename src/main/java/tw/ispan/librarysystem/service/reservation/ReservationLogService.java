@@ -28,7 +28,7 @@ public class ReservationLogService {
 
         // 2. 檢查是否已有相同的預約
         if (reservationLogRepository.existsByUserIdAndBookIdAndStatus(userId, bookId, "PENDING")) {
-            throw new RuntimeException("此書籍已在預約清單中");
+            throw new RuntimeException("已預約過");
         }
 
         // 3. 建立新的預約日誌
@@ -81,7 +81,7 @@ public class ReservationLogService {
             }
             return false;
         } catch (Exception e) {
-            throw new RuntimeException("刪除預約日誌失敗: " + e.getMessage());
+            throw new RuntimeException("資料缺失");
         }
     }
 
@@ -101,7 +101,7 @@ public class ReservationLogService {
             }
             return deletedCount;
         } catch (Exception e) {
-            throw new RuntimeException("批量刪除預約日誌失敗: " + e.getMessage());
+            throw new RuntimeException("資料缺失");
         }
     }
 } 
