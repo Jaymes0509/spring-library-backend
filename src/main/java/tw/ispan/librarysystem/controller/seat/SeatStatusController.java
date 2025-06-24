@@ -26,18 +26,15 @@ public class SeatStatusController {
         return seatStatusService.getAllStatuses();
     }
 
-    @PutMapping("/reserve/{label}")
-    public ResponseEntity<String> reserveSeat(@PathVariable String label) {
+    // 模擬設備損壞
+    @PutMapping("/mark-broken/{label}")
+    public ResponseEntity<String> markSeatAsBroken(@PathVariable String label) {
         Optional<SeatStatus> optional = seatStatusRepository.findBySeatLabel(label);
         if (optional.isPresent()) {
             SeatStatus seat = optional.get();
-            if (seat.getStatus() == SeatStatus.Status.AVAILABLE) {
-                seat.setStatus(SeatStatus.Status.RESERVED);
-                seatStatusRepository.save(seat);
-                return ResponseEntity.ok("預約成功");
-            } else {
-                return ResponseEntity.status(409).body("❌ 該座位已被預約或無法使用");
-            }
+            seat.setStatus(SeatStatus.Status.BROKEN);
+            seatStatusRepository.save(seat);
+            return ResponseEntity.ok("✅ 座位已標記為損壞");
         } else {
             return ResponseEntity.notFound().build();
         }
