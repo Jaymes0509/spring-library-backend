@@ -15,7 +15,7 @@ public interface SeatReservationService {
     String reserveSeat(SeatReservationRequest request);
 
     // 取消某筆預約（如需後台或用戶主動取消）
-    String cancelReservation(String seatLabel, LocalDate date, TimeSlot timeSlot);
+    boolean cancelReservationByUser(Integer userId, String seatLabel, LocalDate date, TimeSlot timeSlot);
 
     // 自動取消過期預約（排程使用）
     void cancelExpiredReservations();

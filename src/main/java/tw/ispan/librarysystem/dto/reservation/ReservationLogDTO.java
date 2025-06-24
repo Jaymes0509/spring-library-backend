@@ -1,3 +1,4 @@
+// 用來裝預約操作日誌的資料
 package tw.ispan.librarysystem.dto.reservation;
 
 import java.time.LocalDateTime;

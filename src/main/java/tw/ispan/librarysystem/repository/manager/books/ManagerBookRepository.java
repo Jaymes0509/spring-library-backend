@@ -47,6 +47,10 @@ public interface ManagerBookRepository
             @Param("classification") String classification,
             @Param("yearFrom") LocalDate  yearFrom,
             @Param("yearTo") LocalDate yearTo,
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
             @Param("language") String language,
             Pageable pageable);
 }

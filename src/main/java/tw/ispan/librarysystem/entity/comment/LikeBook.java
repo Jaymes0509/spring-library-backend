@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "bookcommentlikes",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"comment_id", "member_id"}))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"comment_id", "user_id"}))
 public class LikeBook {
 
     @Id
@@ -16,8 +16,8 @@ public class LikeBook {
     @Column(name = "comment_id", nullable = false)
     private Integer commentId;
 
-    @Column(name = "member_id", nullable = false)
-    private Integer memberId;
+    @Column(name = "user_id", nullable = false)
+    private Integer userId;
 
     @Column(name = "liked_at")
     private LocalDateTime likedAt = LocalDateTime.now();
@@ -39,12 +39,12 @@ public class LikeBook {
         this.commentId = commentId;
     }
 
-    public Integer getMemberId() {
-        return memberId;
+    public Integer getUserId() {
+        return userId;
     }
 
-    public void setMemberId(Integer memberId) {
-        this.memberId = memberId;
+    public void setUserId(Integer userId) {
+        this.userId = userId;
     }
 
     public LocalDateTime getLikedAt() {

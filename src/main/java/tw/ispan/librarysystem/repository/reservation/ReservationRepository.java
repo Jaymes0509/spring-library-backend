@@ -1,3 +1,4 @@
+// 預約 Repository，提供 reservations 資料表的存取方法
 package tw.ispan.librarysystem.repository.reservation;
 
 import org.springframework.data.jpa.repository.Query;

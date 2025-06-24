@@ -1,3 +1,4 @@
+// 用來裝新增預約日誌時要送出的資料
 package tw.ispan.librarysystem.dto.reservation;
 
 import com.fasterxml.jackson.annotation.JsonProperty;

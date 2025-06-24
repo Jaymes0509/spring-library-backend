@@ -1,3 +1,4 @@
+// 預約清單 Repository，提供 reservation_logs 資料表的存取方法
 package tw.ispan.librarysystem.repository.reservation;
 
 import org.springframework.data.jpa.repository.JpaRepository;
