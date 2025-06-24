@@ -329,4 +329,33 @@ public class ReservationService {
             System.err.println("更新書籍狀態失敗：" + e.getMessage());
         }
     }
+
+    // 新增：取消預約（將狀態設為 CANCELLED）
+    public void cancelReservation(Integer reservationId) {
+        ReservationEntity reservation = reservationRepository.findById(reservationId)
+            .orElseThrow(() -> new RuntimeException("找不到預約記錄"));
+        
+        // 檢查預約狀態
+        if (ReservationEntity.STATUS_CANCELLED.equals(reservation.getStatus())) {
+            throw new RuntimeException("此預約已經被取消");
+        }
+        if (ReservationEntity.STATUS_COMPLETED.equals(reservation.getStatus())) {
+            throw new RuntimeException("此預約已經完成，無法取消");
+        }
+        
+        // 將狀態改為 CANCELLED
+        reservation.setStatus(ReservationEntity.STATUS_CANCELLED);
+        reservation.setUpdatedAt(LocalDateTime.now());
+        reservationRepository.save(reservation);
+        
+        // 更新書籍可用性
+        if (reservation.getBook() != null) {
+            updateBookAvailability(reservation.getBook().getBookId());
+        }
+    }
+
+    // 新增：刪除預約（實際上是取消預約的別名）
+    public void deleteReservation(Integer reservationId) {
+        cancelReservation(reservationId);
+    }
 } 

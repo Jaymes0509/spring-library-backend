@@ -22,7 +22,7 @@ public class ReservationLogService {
     @Autowired
     private BookRepository bookRepository;
 
-    public ReservationLogEntity createLog(Long bookId, Long userId, String action, String status) {
+    public ReservationLogEntity createLog(Long bookId, Integer userId, String action, String status) {
         // 1. 檢查書籍是否存在
         BookEntity book = bookRepository.findById(bookId.intValue())
             .orElseThrow(() -> new RuntimeException("書籍不存在"));
@@ -45,7 +45,7 @@ public class ReservationLogService {
         return reservationLogRepository.save(log);
     }
 
-    public List<ReservationLogEntity> getLogsByUserId(Long userId) {
+    public List<ReservationLogEntity> getLogsByUserId(Integer userId) {
         return reservationLogRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
@@ -66,7 +66,7 @@ public class ReservationLogService {
     
     @Deprecated
     public List<ReservationLogEntity> getUserLogs(Long userId) {
-        return getLogsByUserId(userId);
+        return getLogsByUserId(userId.intValue());
     }
 
     /**
