@@ -33,6 +33,9 @@ public class ReservationService {
     @Autowired
     private BookRepository bookRepository;
 
+    @Autowired
+    private ReservationNotificationService notificationService;
+
     public List<ReservationDTO> getAllReservationsWithBookInfo() {
         List<ReservationEntity> reservations = reservationRepository.findAll();
         return reservations.stream()
@@ -129,7 +132,18 @@ public class ReservationService {
         book.setBookId(dto.getBookId());
         entity.setBook(book);
         
-        return reservationRepository.save(entity);
+        // 儲存預約
+        ReservationEntity savedEntity = reservationRepository.save(entity);
+        
+        // 發送預約成功通知郵件
+        try {
+            notificationService.sendReservationSuccessEmail(savedEntity);
+        } catch (Exception e) {
+            // 郵件發送失敗不影響預約流程，只記錄錯誤
+            System.err.println("發送預約成功通知郵件失敗：" + e.getMessage());
+        }
+        
+        return savedEntity;
     }
 
     // 從預約日誌建立正式預約
@@ -147,7 +161,18 @@ public class ReservationService {
         reservation.setPickupLocation("一樓服務台");
         reservation.setPickupMethod("親自取書");
         
-        return reservationRepository.save(reservation);
+        // 儲存預約
+        ReservationEntity savedReservation = reservationRepository.save(reservation);
+        
+        // 發送預約成功通知郵件
+        try {
+            notificationService.sendReservationSuccessEmail(savedReservation);
+        } catch (Exception e) {
+            // 郵件發送失敗不影響預約流程，只記錄錯誤
+            System.err.println("發送預約成功通知郵件失敗：" + e.getMessage());
+        }
+        
+        return savedReservation;
     }
 
     // 新增：查詢特定用戶的預約歷史

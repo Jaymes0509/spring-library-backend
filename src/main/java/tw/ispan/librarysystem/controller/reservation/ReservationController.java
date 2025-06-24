@@ -17,6 +17,9 @@ import tw.ispan.librarysystem.entity.reservation.ReservationLogEntity;
 import tw.ispan.librarysystem.repository.reservation.ReservationRepository;
 import tw.ispan.librarysystem.service.reservation.ReservationService;
 import tw.ispan.librarysystem.service.reservation.ReservationLogService;
+import tw.ispan.librarysystem.service.reservation.ReservationNotificationService;
+import tw.ispan.librarysystem.repository.member.MemberRepository;
+import tw.ispan.librarysystem.entity.member.Member;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -25,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
+import java.util.HashMap;
 
 @Tag(name = "書籍預約管理", description = "提供書籍預約的完整功能，包括單本預約、批量預約、取消預約、預約歷史查詢等")
 @RestController
@@ -40,6 +44,12 @@ public class ReservationController {
     
     @Autowired
     private ReservationLogService reservationLogService;
+
+    @Autowired
+    private ReservationNotificationService notificationService;
+
+    @Autowired
+    private MemberRepository memberRepository;
 
     // 查詢用戶預約清單
     @Operation(summary = "查詢用戶預約清單")
@@ -122,6 +132,7 @@ public class ReservationController {
         String batchReservationId = "BATCH_" + System.currentTimeMillis();
         
         List<ReservationResponseDTO.Result> results = new ArrayList<>();
+        List<ReservationEntity> successfulReservations = new ArrayList<>();
         boolean allSuccess = true;
         
         for (ReservationBatchRequestDTO.BookReserveItem item : batchDto.getBooks()) {
@@ -145,6 +156,9 @@ public class ReservationController {
                 ReservationEntity entity = reservationService.createReservation(dto);
                 result.setReservationId(entity.getReservationId());
                 result.setStatus("success");
+                
+                // 收集成功的預約
+                successfulReservations.add(entity);
             } catch (java.time.format.DateTimeParseException e) {
                 System.out.println("預約失敗訊息：時間格式錯誤");
                 result.setStatus("fail");
@@ -168,6 +182,21 @@ public class ReservationController {
         response.setSuccess(allSuccess);
         response.setResults(results);
         response.setBatchReservationId(batchReservationId); // 回傳統一編號
+        
+        // 如果有成功的預約，發送批量通知郵件
+        if (!successfulReservations.isEmpty()) {
+            try {
+                // 根據 userId 查找會員資訊
+                Member member = memberRepository.findById(batchDto.getUserId().longValue()).orElse(null);
+                if (member != null) {
+                    notificationService.sendBatchReservationSuccessEmail(member, successfulReservations, batchReservationId);
+                }
+            } catch (Exception e) {
+                // 郵件發送失敗不影響預約流程，只記錄錯誤
+                System.err.println("發送批量預約成功通知郵件失敗：" + e.getMessage());
+            }
+        }
+        
         try {
             System.out.println("批量預約回傳內容：" + new ObjectMapper().writeValueAsString(response));
         } catch (Exception e) {
