@@ -19,33 +19,31 @@ public class RandomBook {
     @Column(name = "author")
     private String author;
 
-    @Column(name = "category")
-    private String category;
+    // 🔸 不需要 category 欄位，避免與不存在欄位對應造成錯誤
 
-    // getters & setters
+    // --- Getter / Setter ---
 
     public Integer getBookId() {
         return bookId;
     }
+
     public void setBookId(Integer bookId) {
         this.bookId = bookId;
     }
+
     public String getTitle() {
         return title;
     }
+
     public void setTitle(String title) {
         this.title = title;
     }
+
     public String getAuthor() {
         return author;
     }
+
     public void setAuthor(String author) {
         this.author = author;
-    }
-    public String getCategory() {
-        return category;
-    }
-    public void setCategory(String category) {
-        this.category = category;
     }
 }

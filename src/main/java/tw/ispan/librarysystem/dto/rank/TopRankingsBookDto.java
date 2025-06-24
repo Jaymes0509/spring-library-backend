@@ -1,18 +1,19 @@
 package tw.ispan.librarysystem.dto.rank;
 
 public class TopRankingsBookDto {
+
     private Integer bookId;
     private String title;
     private String author;
-    private String cover;       // 書封面 URL 或空字串
+    private String cover;         // 書封面 URL 或空字串
     private String categoryName; // 分類名稱
     private Double averageRating; // 平均評分（貝式平均）
-    private Long statCount;      // 借閱/評論數量（用Long比較安全）
+    private Long statCount;       // 借閱/評論/預約數（依榜別而變）
 
-    // 無參數建構子（JPA 需要）
+    // ⚠️ 無參數建構子（JPA 或 Jackson 需要）
     public TopRankingsBookDto() {}
 
-    // 7 個參數的建構子，對應 JPQL 查詢結果
+    // ✅ 全參數建構子
     public TopRankingsBookDto(Integer bookId, String title, String author, String cover,
                               String categoryName, Double averageRating, Long statCount) {
         this.bookId = bookId;
@@ -24,7 +25,7 @@ public class TopRankingsBookDto {
         this.statCount = statCount;
     }
 
-    // Getter & Setter
+    // --- Getter / Setter ---
     public Integer getBookId() {
         return bookId;
     }
