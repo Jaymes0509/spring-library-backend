@@ -23,13 +23,17 @@ import tw.ispan.librarysystem.dto.SearchCondition;
 import tw.ispan.librarysystem.dto.BookSimpleDTO;
 import tw.ispan.librarysystem.entity.books.BookEntity;
 import tw.ispan.librarysystem.entity.reservation.ReservationEntity;
+import tw.ispan.librarysystem.entity.borrow.Borrow;
 import tw.ispan.librarysystem.mapper.BookMapper;
 import tw.ispan.librarysystem.repository.books.BookRepository;
 import tw.ispan.librarysystem.repository.reservation.ReservationRepository;
 import tw.ispan.librarysystem.service.books.BookDetailService;
 import tw.ispan.librarysystem.service.books.BookService;
+import tw.ispan.librarysystem.service.borrow.BorrowService;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/books")
@@ -46,6 +50,9 @@ public class BookController {
     
     @Autowired
     private ReservationRepository reservationRepository;
+    
+    @Autowired
+    private BorrowService borrowService;
     
     @PostMapping("/fill-details")
     public ResponseEntity<String> fillMissingBookDetails() {
@@ -70,6 +77,61 @@ public class BookController {
     }
 }
 
+    // 新增：借書功能端點
+    @PostMapping("/{bookId}/borrow")
+    public ResponseEntity<Map<String, Object>> borrowBook(@PathVariable Integer bookId, @RequestBody(required = false) BorrowRequest request) {
+        try {
+            System.out.println("開始處理借書請求，書籍ID: " + bookId);
+            
+            // 檢查書籍是否存在
+            Optional<BookEntity> bookOptional = bookService.findById(bookId);
+            if (!bookOptional.isPresent()) {
+                System.out.println("找不到 ID 為 " + bookId + " 的書籍");
+                return ResponseEntity.notFound().build();
+            }
+            
+            BookEntity book = bookOptional.get();
+            System.out.println("找到書籍: " + book.getTitle() + " (ID: " + book.getBookId() + ")");
+            
+            // 檢查書籍是否可借
+            if (!book.getIsAvailable()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "該書籍目前無法借閱");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 獲取用戶ID（這裡使用預設值，實際應用中應該從認證系統獲取）
+            Integer userId = request != null ? request.getUserId() : 1;
+            
+            // 執行借書
+            Borrow borrow = borrowService.borrowBook(userId, bookId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "借書成功！");
+            response.put("borrowId", borrow.getBorrowId());
+            response.put("dueDate", borrow.getDueDate());
+            response.put("bookTitle", book.getTitle());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            System.err.println("借書失敗，錯誤: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "借書失敗：" + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            System.err.println("借書時發生未預期錯誤: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "借書失敗，請稍後再試");
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
     @PostMapping("/{isbn}/reserve")
     public ResponseEntity<?> reserveBook(@PathVariable String isbn, @RequestBody(required = false) ReservationRequest request) {
         try {
@@ -91,9 +153,13 @@ public class BookController {
             reservation.setUserId(request != null ? request.getUserId() : 1); // 預設用戶ID為1
             reservation.setReserveTime(LocalDateTime.now());
             reservation.setExpiryDate(LocalDateTime.now().plusDays(3)); // 3天後過期
-            reservation.setStatus("PENDING");
+            reservation.setStatus(ReservationEntity.STATUS_PENDING);
             reservation.setCreatedAt(LocalDateTime.now());
             reservation.setUpdatedAt(LocalDateTime.now());
+            
+            // 設定預設的取書相關資訊
+            reservation.setPickupLocation("一樓服務台");
+            reservation.setPickupMethod("親自取書");
             
             System.out.println("準備儲存預約記錄...");
             System.out.println("預約記錄內容: " + reservation.toString());
@@ -167,6 +233,19 @@ public class BookController {
             System.err.println("資料庫測試失敗: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.badRequest().body("資料庫測試失敗: " + e.getMessage());
+        }
+    }
+
+    // 內部類別用於接收借書請求
+    public static class BorrowRequest {
+        private Integer userId;
+        
+        public Integer getUserId() {
+            return userId;
+        }
+        
+        public void setUserId(Integer userId) {
+            this.userId = userId;
         }
     }
 

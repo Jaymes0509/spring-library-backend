@@ -26,7 +26,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer>,JpaSp
     @EntityGraph(attributePaths = {"category", "category.categorysystem", "bookDetail"})
     Optional<BookEntity> findById(Integer id);
 
-    // 基本搜尋（查 title, author, isbn, imgUrl, publisher, publishdate）
+    // 基本搜尋（查 title, author, isbn, imgUrl, publisher）
     @Query("SELECT new tw.ispan.librarysystem.dto.BookSimpleDTO(b.bookId, b.isbn, b.title, b.author, d.imgUrl, b.publisher, b.publishdate) FROM BookEntity b LEFT JOIN b.bookDetail d WHERE " +
            "LOWER(b.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(b.author) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
@@ -42,8 +42,8 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer>,JpaSp
        "(:publisher       IS NULL OR LOWER(b.publisher)   LIKE LOWER(CONCAT('%', :publisher, '%'))) AND " +
        "(:isbn            IS NULL OR b.isbn               LIKE CONCAT('%', :isbn, '%')) AND " +
        "(:classification  IS NULL OR b.classification     LIKE CONCAT('%', :classification, '%')) AND " +
-       "(:yearFrom       IS NULL OR SUBSTRING(b.publishdate,1,4) >= :yearFrom) AND " +
-       "(:yearTo         IS NULL OR SUBSTRING(b.publishdate,1,4) <= :yearTo) AND " +
+       "(:yearFrom       IS NULL OR b.publishdate >= :yearFrom) AND " +
+       "(:yearTo         IS NULL OR b.publishdate <= :yearTo) AND " +
        "(:language        IS NULL OR b.language          = :language)"
     )
     Page<BookSimpleDTO> advancedSearchWithCover(
@@ -52,8 +52,8 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer>,JpaSp
         @Param("publisher")      String publisher,
         @Param("isbn")           String isbn,
         @Param("classification") String classification,
-        @Param("yearFrom")       String  yearFrom,
-        @Param("yearTo")         String  yearTo,
+        @Param("yearFrom")       Integer  yearFrom,
+        @Param("yearTo")         Integer  yearTo,
         @Param("language")       String language,
         Pageable pageable
     );

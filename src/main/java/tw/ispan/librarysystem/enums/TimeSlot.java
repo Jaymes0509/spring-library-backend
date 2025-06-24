@@ -26,7 +26,7 @@ public enum TimeSlot {
 
     public static TimeSlot fromLabel(String label) {
         for (TimeSlot slot : values()) {
-            if ((slot.start + " - " + slot.end).equals(label)) {
+            if (slot.name().equalsIgnoreCase(label) || (slot.start + " - " + slot.end).equals(label)) {
                 return slot;
             }
         }

@@ -13,11 +13,11 @@ services:
       - library_network
     command: --default-authentication-plugin=mysql_native_password
 
+
+
 volumes:
-  elasticsearch_data:
-    driver: local
   mysql_data:
-    driver: local
+  elasticsearch_data:
 
 networks:
   library_network:

@@ -1,3 +1,4 @@
+// 用來裝預約操作日誌的資料
 package tw.ispan.librarysystem.dto.reservation;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ public class ReservationLogDTO {
     private String note;
     private String title;
     private String author;
+    private String isbn;
 
     public Long getLogId() { return logId; }
     public void setLogId(Long logId) { this.logId = logId; }
@@ -47,4 +49,7 @@ public class ReservationLogDTO {
 
     public String getAuthor() { return author; }
     public void setAuthor(String author) { this.author = author; }
+
+    public String getIsbn() { return isbn; }
+    public void setIsbn(String isbn) { this.isbn = isbn; }
 } 

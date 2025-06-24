@@ -64,3 +64,5 @@ bookdata/.env
 
 # Elasticsearch 帳號密碼
 els_account.txt
+
+books_sync.py

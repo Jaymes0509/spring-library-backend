@@ -22,6 +22,7 @@ public class BorrowResponseDto {
     private String bookTitle;
     private String bookAuthor;
     private String bookIsbn;
+    private String imgUrl;
     
     // 會員資訊
     private String memberName;
@@ -43,6 +44,9 @@ public class BorrowResponseDto {
             this.bookTitle = book.getTitle();
             this.bookAuthor = book.getAuthor();
             this.bookIsbn = book.getIsbn();
+            if (book.getBookDetail() != null) {
+                this.imgUrl = book.getBookDetail().getImgUrl();
+            }
         }
         
         // 設置會員資訊

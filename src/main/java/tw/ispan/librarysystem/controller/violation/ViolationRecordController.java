@@ -1,5 +1,6 @@
 package tw.ispan.librarysystem.controller.violation;
 
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -58,6 +59,7 @@ public class ViolationRecordController {
      * 獲取活躍的違規記錄（懲罰期尚未結束）
      * @return 活躍的違規記錄列表
      */
+    @Operation(summary = "查詢活躍違規記錄")
     @GetMapping("/active")
     public ResponseEntity<Map<String, Object>> getActiveViolations() {
         Map<String, Object> response = new HashMap<>();

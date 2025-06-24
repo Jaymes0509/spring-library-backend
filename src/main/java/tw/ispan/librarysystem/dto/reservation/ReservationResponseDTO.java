@@ -1,3 +1,4 @@
+// 用來裝預約 API 回傳的結果（單筆或批量）
 package tw.ispan.librarysystem.dto.reservation;
 
 import java.util.List;

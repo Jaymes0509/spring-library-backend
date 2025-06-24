@@ -1,3 +1,4 @@
+// 用來裝單一筆預約的詳細資料
 package tw.ispan.librarysystem.dto.reservation;
 
 import java.time.LocalDateTime;
@@ -54,6 +55,9 @@ public class ReservationDTO {
 
     @JsonProperty("batch_id")
     private String batchId;
+
+    @JsonProperty("pickup_method")
+    private String pickupMethod;
 
     // ✅ 新增這段 constructor 給 JPQL 使用
     public ReservationDTO(Integer reservationId, String status, String title, LocalDateTime reserveTime) {

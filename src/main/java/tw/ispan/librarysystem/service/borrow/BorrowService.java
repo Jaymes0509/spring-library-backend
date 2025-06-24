@@ -16,9 +16,11 @@ import tw.ispan.librarysystem.repository.books.BookRepository;
 import tw.ispan.librarysystem.repository.borrow.BorrowRepository;
 import tw.ispan.librarysystem.service.notification.NotificationService;
 import tw.ispan.librarysystem.dto.borrow.BorrowStatisticsDto;
+import tw.ispan.librarysystem.dto.borrow.BorrowBatchRequestDto;
+import tw.ispan.librarysystem.dto.borrow.BorrowBatchResponseDto;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -167,9 +169,10 @@ public class BorrowService {
             }
 
             // 使用原生 SQL 查詢來提高效能
-            String sql = "SELECT b.*, bk.title, bk.author, bk.isbn, m.name, m.email " +
+            String sql = "SELECT b.*, bk.title, bk.author, bk.isbn, m.name, m.email, bd.img_url " +
                         "FROM borrow_records b " +
                         "LEFT JOIN books bk ON b.book_id = bk.book_id " +
+                        "LEFT JOIN bookdetail bd ON bk.book_id = bd.book_id " +
                         "LEFT JOIN members m ON b.user_id = m.user_id " +
                         "WHERE b.user_id = ? " +
                         "ORDER BY b.borrow_date DESC " +
@@ -194,6 +197,11 @@ public class BorrowService {
                 book.setTitle(rs.getString("title"));
                 book.setAuthor(rs.getString("author"));
                 book.setIsbn(rs.getString("isbn"));
+                // 新增：設置 BookDetailEntity 並帶入 imgUrl
+                tw.ispan.librarysystem.entity.books.BookDetailEntity detail = new tw.ispan.librarysystem.entity.books.BookDetailEntity();
+                detail.setBookId(rs.getInt("book_id"));
+                detail.setImgUrl(rs.getString("img_url"));
+                book.setBookDetail(detail);
                 borrow.setBook(book);
                 
                 Member member = new Member();
@@ -368,5 +376,82 @@ public class BorrowService {
         if ((Boolean) limits.get("hasOverdueLimit")) {
             throw new RuntimeException("您有逾期書籍，請先歸還逾期書籍後再借閱");
         }
+    }
+
+    @Transactional
+    public BorrowBatchResponseDto batchBorrow(Integer userId, List<BorrowBatchRequestDto.BorrowBookRequest> books) {
+        logger.info("處理批量借書請求 - 使用者ID: {}, 書籍數量: {}", userId, books.size());
+        
+        BorrowBatchResponseDto response = new BorrowBatchResponseDto();
+        response.setSuccess(true);
+        response.setMessage("批量借書完成");
+        response.setResults(new ArrayList<>());
+        
+        // 檢查借閱限制
+        validateBorrowLimits(userId);
+        
+        // 檢查批量借書數量限制
+        if (books.size() > MAX_BORROW_BOOKS) {
+            throw new RuntimeException("一次最多只能借閱 " + MAX_BORROW_BOOKS + " 本書");
+        }
+        
+        // 處理每本書的借閱
+        for (BorrowBatchRequestDto.BorrowBookRequest bookRequest : books) {
+            BorrowBatchResponseDto.BorrowResult result = new BorrowBatchResponseDto.BorrowResult();
+            result.setBookId(bookRequest.getBookId());
+            
+            try {
+                // 使用自定義借閱期限（如果提供）
+                int borrowDays = bookRequest.getDuration() != null ? bookRequest.getDuration() : BORROW_DAYS;
+                
+                // 檢查書籍是否存在且可借
+                BookEntity book = bookRepository.findById(bookRequest.getBookId())
+                    .orElseThrow(() -> new RuntimeException("找不到該書籍"));
+
+                if (!book.getIsAvailable()) {
+                    result.setStatus("failed");
+                    result.setMessage("該書籍目前無法借閱");
+                    response.getResults().add(result);
+                    continue;
+                }
+
+                // 檢查是否已借閱該書
+                if (borrowRepository.existsActiveBookBorrow(userId, bookRequest.getBookId())) {
+                    result.setStatus("failed");
+                    result.setMessage("您已經借閱了這本書");
+                    response.getResults().add(result);
+                    continue;
+                }
+
+                // 建立借閱記錄
+                Borrow borrow = new Borrow();
+                borrow.setUserId(userId);
+                borrow.setBookId(bookRequest.getBookId());
+                borrow.setBorrowDate(LocalDateTime.now());
+                borrow.setDueDate(LocalDateTime.now().plusDays(borrowDays));
+                borrow.setRenewCount(0);
+                borrow.setStatus(BorrowStatus.BORROWED);
+
+                // 更新書籍狀態
+                book.setIsAvailable(false);
+                bookRepository.save(book);
+
+                // 儲存借閱記錄
+                Borrow savedBorrow = borrowRepository.save(borrow);
+                
+                result.setStatus("success");
+                result.setBorrowId(savedBorrow.getBorrowId());
+                logger.info("批量借書成功 - 借閱ID: {}, 書籍ID: {}", savedBorrow.getBorrowId(), bookRequest.getBookId());
+                
+            } catch (Exception e) {
+                result.setStatus("failed");
+                result.setMessage(e.getMessage());
+                logger.error("批量借書失敗 - 書籍ID: {}, 錯誤: {}", bookRequest.getBookId(), e.getMessage());
+            }
+            
+            response.getResults().add(result);
+        }
+        
+        return response;
     }
 } 
