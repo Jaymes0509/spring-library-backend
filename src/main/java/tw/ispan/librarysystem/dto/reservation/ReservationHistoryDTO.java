@@ -1,3 +1,4 @@
+// 用來裝每一筆預約歷史紀錄的資料
 package tw.ispan.librarysystem.dto.reservation;
 
 import java.time.LocalDateTime;
