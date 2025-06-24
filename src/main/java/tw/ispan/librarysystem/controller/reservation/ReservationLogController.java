@@ -48,10 +48,10 @@ public class ReservationLogController {
 
             // 從請求中獲取資料並進行類型轉換
             Long bookId = null;
-            Long userId = null;
+            Integer userId = null;
             try {
                 bookId = Long.valueOf(request.get("book_id").toString());
-                userId = Long.valueOf(request.get("user_id").toString());
+                userId = Integer.valueOf(request.get("user_id").toString());
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("book_id 或 user_id 格式不正確");
             }
@@ -89,13 +89,13 @@ public class ReservationLogController {
 
     @Operation(summary = "查詢使用者的預約清單")
     @GetMapping
-    public List<ReservationLogDTO> getLogsByUserId(@RequestParam("userId") Long userId) {
+    public List<ReservationLogDTO> getLogsByUserId(@RequestParam("userId") Integer userId) {
         // 查詢該 userId 的所有 reservation_logs
         List<ReservationLogEntity> logs = reservationLogService.getLogsByUserId(userId);
         return logs.stream().map(log -> {
             ReservationLogDTO dto = new ReservationLogDTO();
             dto.setLogId(log.getId());
-            dto.setUserId(log.getUserId());
+            dto.setUserId(log.getUserId().longValue());
             dto.setBookId(log.getBookId());
             dto.setAction(log.getAction());
             dto.setStatus(log.getStatus());
