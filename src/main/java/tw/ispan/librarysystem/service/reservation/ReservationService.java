@@ -33,6 +33,9 @@ public class ReservationService {
     @Autowired
     private BookRepository bookRepository;
 
+    @Autowired
+    private ReservationNotificationService notificationService;
+
     public List<ReservationDTO> getAllReservationsWithBookInfo() {
         List<ReservationEntity> reservations = reservationRepository.findAll();
         return reservations.stream()
@@ -129,7 +132,18 @@ public class ReservationService {
         book.setBookId(dto.getBookId());
         entity.setBook(book);
         
-        return reservationRepository.save(entity);
+        // 儲存預約
+        ReservationEntity savedEntity = reservationRepository.save(entity);
+        
+        // 發送預約成功通知郵件
+        try {
+            notificationService.sendReservationSuccessEmail(savedEntity);
+        } catch (Exception e) {
+            // 郵件發送失敗不影響預約流程，只記錄錯誤
+            System.err.println("發送預約成功通知郵件失敗：" + e.getMessage());
+        }
+        
+        return savedEntity;
     }
 
     // 從預約日誌建立正式預約
@@ -147,7 +161,18 @@ public class ReservationService {
         reservation.setPickupLocation("一樓服務台");
         reservation.setPickupMethod("親自取書");
         
-        return reservationRepository.save(reservation);
+        // 儲存預約
+        ReservationEntity savedReservation = reservationRepository.save(reservation);
+        
+        // 發送預約成功通知郵件
+        try {
+            notificationService.sendReservationSuccessEmail(savedReservation);
+        } catch (Exception e) {
+            // 郵件發送失敗不影響預約流程，只記錄錯誤
+            System.err.println("發送預約成功通知郵件失敗：" + e.getMessage());
+        }
+        
+        return savedReservation;
     }
 
     // 新增：查詢特定用戶的預約歷史
@@ -303,5 +328,34 @@ public class ReservationService {
             // 書籍狀態更新失敗不影響預約取消
             System.err.println("更新書籍狀態失敗：" + e.getMessage());
         }
+    }
+
+    // 新增：取消預約（將狀態設為 CANCELLED）
+    public void cancelReservation(Integer reservationId) {
+        ReservationEntity reservation = reservationRepository.findById(reservationId)
+            .orElseThrow(() -> new RuntimeException("找不到預約記錄"));
+        
+        // 檢查預約狀態
+        if (ReservationEntity.STATUS_CANCELLED.equals(reservation.getStatus())) {
+            throw new RuntimeException("此預約已經被取消");
+        }
+        if (ReservationEntity.STATUS_COMPLETED.equals(reservation.getStatus())) {
+            throw new RuntimeException("此預約已經完成，無法取消");
+        }
+        
+        // 將狀態改為 CANCELLED
+        reservation.setStatus(ReservationEntity.STATUS_CANCELLED);
+        reservation.setUpdatedAt(LocalDateTime.now());
+        reservationRepository.save(reservation);
+        
+        // 更新書籍可用性
+        if (reservation.getBook() != null) {
+            updateBookAvailability(reservation.getBook().getBookId());
+        }
+    }
+
+    // 新增：刪除預約（實際上是取消預約的別名）
+    public void deleteReservation(Integer reservationId) {
+        cancelReservation(reservationId);
     }
 } 

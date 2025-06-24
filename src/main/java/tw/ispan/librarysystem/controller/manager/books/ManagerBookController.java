@@ -90,13 +90,12 @@ public class ManagerBookController {
     }
 
     @GetMapping("/all")
-    public List<BookDTO> getAllBooks() {
-        // 這裡給一個很大的分頁，等於全部撈出來
-        Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
-        List<BookEntity> books = bookService.findAll(pageable).getContent();
-        return books.stream()
-                .map(bookMapper::toDTO)
-                .toList();
+    public Page<BookDTO> getBooksPage(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<BookEntity> bookPage = bookService.findAll(pageable);
+        return bookPage.map(bookMapper::toDTO);
     }
 
     @GetMapping("/test")
