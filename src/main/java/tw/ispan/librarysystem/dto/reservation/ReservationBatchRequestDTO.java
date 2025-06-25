@@ -1,3 +1,4 @@
+// 用來裝批量預約請求（多本書一起預約）的資料
 package tw.ispan.librarysystem.dto.reservation;
 
 import java.util.List;

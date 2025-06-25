@@ -6,16 +6,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tw.ispan.librarysystem.dto.seat.SeatReservationRequest;
+import tw.ispan.librarysystem.entity.seat.Seat;
 import tw.ispan.librarysystem.enums.TimeSlot;
+import tw.ispan.librarysystem.repository.seat.SeatRepository;
 import tw.ispan.librarysystem.repository.seat.SeatReservationRepository;
 import tw.ispan.librarysystem.service.seat.SeatReservationService;
 import tw.ispan.librarysystem.exception.SeatAlreadyReservedException;
 import tw.ispan.librarysystem.exception.UserAlreadyReservedException;
 import tw.ispan.librarysystem.entity.seat.SeatReservation;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/seats/reservations")
@@ -27,6 +32,10 @@ public class SeatReservationController {
 
     @Autowired
     private SeatReservationRepository reservationRepo;
+
+    @Autowired
+    private SeatRepository seatRepo;
+
 
 
     @GetMapping("/occupied")
@@ -43,8 +52,17 @@ public class SeatReservationController {
 
         try {
             String result = seatReservationService.reserveSeat(request);
-            return ResponseEntity.ok(result); // 成功
 
+            Optional<Seat> optionalSeat = seatRepo.findBySeatLabel(request.getSeatLabel());
+            if (optionalSeat.isPresent()) {
+                Seat seat = optionalSeat.get();
+                seat.setStatus(Seat.Status.RESERVED); //  正確 enum 用法
+                seatRepo.save(seat);
+            } else {
+                return ResponseEntity.badRequest().body("❌ 座位不存在");
+            }
+
+            return ResponseEntity.ok(result); //  最終只有這個 return
         } catch (SeatAlreadyReservedException e) {
             // 該座位已被預約
             return ResponseEntity.status(HttpStatus.CONFLICT).body("⚠️ 該座位已被預約");
@@ -61,6 +79,8 @@ public class SeatReservationController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("❌ 系統錯誤，請稍後再試");
         }
+
+
     }
 
     @GetMapping("/check")
@@ -82,18 +102,27 @@ public class SeatReservationController {
             @RequestParam Integer userId,
             @RequestParam String seatLabel,
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam("timeSlot") String timeSlotStr //  先接字串
+            @RequestParam("timeSlot") String timeSlotStr
     ) {
         try {
-            TimeSlot timeSlot = TimeSlot.fromLabel(timeSlotStr); //  再轉 enum
-            String result = seatReservationService.cancelReservationByUser(userId, seatLabel, date, timeSlot);
+            TimeSlot timeSlot = TimeSlot.fromLabel(timeSlotStr);
+            boolean cancelled = seatReservationService.cancelReservationByUser(userId, seatLabel, date, timeSlot);
 
-            if (result.contains("成功")) return ResponseEntity.ok(result);
-            return ResponseEntity.badRequest().body(result);
+            if (cancelled) {
+                return ResponseEntity.ok("✅ 預約已取消");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("❌ 找不到要取消的預約");
+            }
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("❌ 無效的時段：" + timeSlotStr);
         }
+    }
+
+    // 查詢有未來預約的座位
+    @GetMapping("/reservations/upcoming")
+    public List<String> getUpcomingSeatLabels() {
+        return reservationRepo.findUpcomingSeatLabels();
     }
 }
 

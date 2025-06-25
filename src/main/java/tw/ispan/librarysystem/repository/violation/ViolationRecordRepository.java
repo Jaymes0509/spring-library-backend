@@ -1,3 +1,4 @@
+// 用來查詢和操作違規記錄資料表
 package tw.ispan.librarysystem.repository.violation;
 
 import org.springframework.data.jpa.repository.JpaRepository;

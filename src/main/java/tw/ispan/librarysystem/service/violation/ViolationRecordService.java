@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// 用來處理違規記錄的查詢、新增等功能
 @Service
 public class ViolationRecordService {
 
@@ -62,7 +63,7 @@ public class ViolationRecordService {
             );
             
             // 獲取用戶資訊
-            Member member = memberRepository.findById(violation.getUserId().longValue()).orElse(null);
+            Member member = memberRepository.findById(violation.getUserId()).orElse(null);
             if (member != null) {
                 dto.setUserName(member.getName());
                 dto.setUserEmail(member.getEmail());
@@ -91,7 +92,7 @@ public class ViolationRecordService {
                 );
                 
                 // 獲取用戶資訊
-                Member member = memberRepository.findById(violation.getUserId().longValue()).orElse(null);
+                Member member = memberRepository.findById(violation.getUserId()).orElse(null);
                 if (member != null) {
                     dto.setUserName(member.getName());
                     dto.setUserEmail(member.getEmail());

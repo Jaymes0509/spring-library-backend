@@ -24,10 +24,10 @@ public class TopRankingsServiceImpl implements TopRankingsService {
         List<TopRankingsBookDto> reservationList = topRankingsRepository.findTopRankingsByReservations(top10);
         List<TopRankingsBookDto> borrowList = topRankingsRepository.findTopRankingsByBorrows(top10);
 
-        //可以使用全域變數
         double m = 5.0;      // 平均參考數
         double c = 3;      // 平均分數
         long minReviews = 10; // 最少評論門檻
+
         List<TopRankingsBookDto> ratingList = topRankingsRepository.findTopRankingsByRatings(m, c, minReviews, top10);
 
         return new TopRankingsDto(reservationList, borrowList, ratingList);
@@ -57,7 +57,9 @@ public class TopRankingsServiceImpl implements TopRankingsService {
             case "rating":
                 double m = 5.0;
                 double c = 3;
+
                 long minReviewCount = 10;
+
                 return topRankingsRepository.findDetailedRatings(
                         categoryId, year, month, keyword, m, c, minReviewCount, pageable
                 );

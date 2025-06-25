@@ -1,3 +1,4 @@
+// 預約資料庫實體，對應 reservations 資料表
 package tw.ispan.librarysystem.entity.reservation;
 
 import jakarta.persistence.*;

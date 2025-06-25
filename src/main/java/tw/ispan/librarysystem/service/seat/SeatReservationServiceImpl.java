@@ -4,19 +4,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tw.ispan.librarysystem.dto.seat.SeatReservationRequest;
+import tw.ispan.librarysystem.entity.seat.Seat;
 import tw.ispan.librarysystem.entity.seat.SeatReservation;
 import tw.ispan.librarysystem.entity.seat.SeatReservation.Status;
-import tw.ispan.librarysystem.entity.seat.SeatStatus;
 import tw.ispan.librarysystem.enums.TimeSlot;
 import tw.ispan.librarysystem.exception.SeatAlreadyReservedException;
 import tw.ispan.librarysystem.exception.UserAlreadyReservedException;
 import tw.ispan.librarysystem.repository.seat.SeatReservationRepository;
-import tw.ispan.librarysystem.repository.seat.SeatStatusRepository;
+import tw.ispan.librarysystem.repository.seat.SeatRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 public class SeatReservationServiceImpl implements SeatReservationService {
 
     private final SeatReservationRepository reservationRepo;
-    private final SeatStatusRepository seatStatusRepo;
+    private final SeatRepository seatRepo;
 
     @Override
     public List<String> getReservedSeatLabels(LocalDate date, TimeSlot timeSlot) {
@@ -38,7 +39,7 @@ public class SeatReservationServiceImpl implements SeatReservationService {
     @Override
     @Transactional
     public String reserveSeat(SeatReservationRequest request) {
-        SeatStatus seat = seatStatusRepo.findBySeatLabel(request.getSeatLabel())
+        Seat seat = seatRepo.findBySeatLabel(request.getSeatLabel())
                 .orElseThrow(() -> new IllegalArgumentException("找不到座位: " + request.getSeatLabel()));
 
         System.out.println("📥 預約請求內容：");
@@ -48,6 +49,25 @@ public class SeatReservationServiceImpl implements SeatReservationService {
         System.out.println("📍 timeSlot: " + request.getTimeSlot());
         TimeSlot slot = TimeSlot.fromLabel(request.getTimeSlot()); // ✅ 轉為 Enum
         System.out.println("📍 轉換後的時段 enum: " + slot.name());
+
+        //  先檢查是否有一筆相同資料但狀態是 CANCELLED
+        Optional<SeatReservation> cancelledReservation = reservationRepo
+                .findByUserIdAndReservationDateAndTimeSlotAndStatus(
+                        request.getUserId(),
+                        request.getReservationDate(),
+                        slot,
+                        SeatReservation.Status.CANCELLED
+                );
+
+        if (cancelledReservation.isPresent()) {
+            //  恢復狀態為 RESERVED
+            SeatReservation existing = cancelledReservation.get();
+            existing.setSeat(seat); // 若座位變了則更新
+            existing.setStatus(SeatReservation.Status.RESERVED);
+            reservationRepo.save(existing);
+            return "✅ 預約已重新啟用: " + seat.getSeatLabel();
+        }
+
 
         // 這段為檢查同一人同一天同時段是否已預約
         boolean alreadyBooked = reservationRepo.existsByUserIdAndReservationDateAndTimeSlotAndStatus(
@@ -60,7 +80,7 @@ public class SeatReservationServiceImpl implements SeatReservationService {
             throw new UserAlreadyReservedException("❌ 您已在該時段預約過其他座位");
         }
 
-        // 這段為檢查座位是否被預約
+        // 這段為檢查座位是否被預約( 該座位是否已被其他人預約（狀態為 RESERVED）)
         boolean seatTaken = reservationRepo.existsBySeatAndReservationDateAndTimeSlotAndStatus(
                 seat,
                 request.getReservationDate(),
@@ -71,7 +91,7 @@ public class SeatReservationServiceImpl implements SeatReservationService {
             throw new SeatAlreadyReservedException("❌ 該座位已被預約");
         }
 
-        // 建立預約
+        // 沒預約過,建立新預約
         SeatReservation reservation = new SeatReservation();
         reservation.setUserId(request.getUserId());
         reservation.setSeat(seat);
@@ -86,21 +106,24 @@ public class SeatReservationServiceImpl implements SeatReservationService {
 
     @Override
     @Transactional
-    public String cancelReservationByUser(Integer userId, String seatLabel, LocalDate date, TimeSlot timeSlot) {
-        SeatStatus seat = seatStatusRepo.findBySeatLabel(seatLabel)
+    public boolean cancelReservationByUser(Integer userId, String seatLabel, LocalDate date, TimeSlot timeSlot) {
+        Seat seat = seatRepo.findBySeatLabel(seatLabel)
                 .orElseThrow(() -> new IllegalArgumentException("找不到座位：" + seatLabel));
 
-        List<SeatReservation> reservations = reservationRepo.findByUserIdAndSeatAndReservationDateAndTimeSlotAndStatus(
-                userId, seat, date, timeSlot, Status.RESERVED
-        );
+        Optional<SeatReservation> reservationOpt = reservationRepo
+                .findByUserIdAndReservationDateAndTimeSlotAndStatus(
+                        userId, date, timeSlot, Status.RESERVED
+                );
 
-        if (reservations.isEmpty()) {
-            return "❌ 找不到要取消的預約";
+        if (reservationOpt.isEmpty()) {
+            return false;
         }
 
-        reservations.forEach(r -> r.setStatus(Status.CANCELLED));
-        reservationRepo.saveAll(reservations);
-        return "✅ 預約已取消";
+        SeatReservation reservation = reservationOpt.get();
+        reservation.setStatus(Status.CANCELLED);
+        reservationRepo.save(reservation);
+        return true;
+
     }
 
     @Override
