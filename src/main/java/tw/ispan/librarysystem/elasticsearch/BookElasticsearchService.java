@@ -6,27 +6,21 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import tw.ispan.librarysystem.dto.BookDTO;
 import tw.ispan.librarysystem.dto.PageResponseDTO;
 import tw.ispan.librarysystem.entity.books.BookDetailEntity;
 import tw.ispan.librarysystem.repository.books.BookDetailRepository;
-import tw.ispan.librarysystem.elasticsearch.EsQueryCondition;
-
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import co.elastic.clients.json.JsonData;
-import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 
 @Service
 public class BookElasticsearchService {
@@ -65,52 +59,60 @@ public class BookElasticsearchService {
         }
 
         // 排序欄位若是 text，則使用 keyword 子欄位
-        final String sortFieldForEs;
-        if (List.of("title", "author", "publisher").contains(sortField)) {
-            sortFieldForEs = sortField + ".keyword";
-        } else {
-            sortFieldForEs = sortField;
-        }
+        final String sortFieldForEs = List.of("title", "author", "publisher").contains(sortField)
+            ? sortField + ".keyword"
+            : sortField;
 
         int from = page * size;
         SearchResponse<BookDoc> response;
-        String[] termFields = {"isbn", "language", "classification", "publishdate"};
         
         try {
             co.elastic.clients.elasticsearch._types.query_dsl.Query query;
             String queryType = "";
+
             if ("fulltext".equals(field)) {
-                if (keyword.matches("\\d{13}")) {
+                // 1. 優先處理 ISBN 搜尋
+                if (keyword.matches("\\d{10,13}")) {
                     queryType = "term (isbn)";
-                    query = co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q.term(t -> t.field("isbn").value(keyword)));
-                } else if (keyword.contains("*") || keyword.contains("?")) {
-                    queryType = "multi_match (wildcard, best_fields)";
-                    query = co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q.multiMatch(m -> m
-                        .fields("title", "author", "publisher", "isbn")
+                    query = Query.of(q -> q.term(t -> t.field("isbn").value(keyword)));
+                } 
+                // 2. 處理多詞彙搜尋（片語搜尋）
+                else if (keyword.contains(" ") && keyword.trim().split("\\s+").length > 1) {
+                    queryType = "multi_match (phrase with boost)";
+                    query = Query.of(q -> q.multiMatch(m -> m
+                        .fields("title^3", "author^2", "publisher", "isbn")
                         .query(keyword)
-                        .type(co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType.BestFields)
+                        .type(TextQueryType.Phrase)
+                        .minimumShouldMatch("75%")
                     ));
-                } else if (keyword.contains(" ")) {
-                    queryType = "multi_match (phrase)";
-                    query = co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q.multiMatch(m -> m
-                        .fields("title", "author", "publisher", "isbn")
+                } 
+                // 3. 處理萬用字元搜尋
+                else if (keyword.contains("*") || keyword.contains("?")) {
+                    queryType = "multi_match (wildcard)";
+                    query = Query.of(q -> q.multiMatch(m -> m
+                        .fields("title^3", "author^2", "publisher", "isbn")
                         .query(keyword)
-                        .type(co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType.Phrase)
+                        .type(TextQueryType.BestFields)
                     ));
-                } else {
-                    queryType = "multi_match (best_fields)";
-                    query = co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q.multiMatch(m -> m
-                        .fields("title", "author", "publisher", "isbn")
+                } 
+                // 4. 一般單詞搜尋
+                else {
+                    queryType = "multi_match (best_fields with boost)";
+                    query = Query.of(q -> q.multiMatch(m -> m
+                        .fields("title^3", "author^2", "publisher", "isbn")
                         .query(keyword)
-                        .type(co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType.BestFields)
+                        .type(TextQueryType.BestFields)
+                        .minimumShouldMatch("75%")
+                        .fuzziness("AUTO")  // 加入模糊匹配
                     ));
                 }
             } else {
-                // 保留原本單一欄位查詢邏輯（如有需要）
-                query = buildQueryByInput(field, keyword);
                 queryType = "custom field query";
+                query = buildQueryByInput(field, keyword);
             }
+
             log.info("查詢型態: {}, field={}, keyword={}", queryType, field, keyword);
+
             response = client.search(s -> s
                 .index(BOOKS_INDEX)
                 .from(from)
@@ -129,9 +131,13 @@ public class BookElasticsearchService {
                 .map(Hit::source)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-            List<Integer> bookIds = docs.stream().map(BookDoc::getBookId).filter(Objects::nonNull).collect(Collectors.toList());
-            List<BookDetailEntity> details = bookIds.isEmpty() ? List.of() : bookDetailRepository.findAllById(bookIds);
-            Map<Integer, BookDetailEntity> detailMap = details.stream().collect(Collectors.toMap(BookDetailEntity::getBookId, d -> d));
+
+            List<Integer> bookIds = docs.stream().map(BookDoc::getBookId).filter(Objects::nonNull).toList();
+            Map<Integer, BookDetailEntity> detailMap = bookIds.isEmpty()
+                ? Map.of()
+                : bookDetailRepository.findAllById(bookIds).stream()
+                    .collect(Collectors.toMap(BookDetailEntity::getBookId, d -> d));
+
             List<BookSearchResponse> dtoList = docs.stream().map(doc -> {
                 BookSearchResponse dto = new BookSearchResponse();
                 dto.setBookId(doc.getBookId());
@@ -145,20 +151,23 @@ public class BookElasticsearchService {
                 dto.setIsAvailable(doc.getIsAvailable());
                 dto.setType(doc.getType());
                 dto.setVersion(doc.getVersion());
+
                 BookDetailEntity detail = detailMap.get(doc.getBookId());
                 if (detail != null) {
                     dto.setImgUrl(detail.getImgUrl());
                     dto.setSummary(detail.getSummary());
                 }
                 return dto;
-            }).collect(Collectors.toList());
+            }).toList();
 
             long total = response.hits().total() != null ? response.hits().total().value() : 0;
             int totalPages = (int) Math.ceil((double) total / size);
 
-            return new PageResponseDTO<>(dtoList, page, size, total, totalPages,
-                page + 1 == totalPages, page == 0);
-                
+            return new PageResponseDTO<>(
+                dtoList, page, size, total, totalPages,
+                page + 1 == totalPages, page == 0
+            );
+
         } catch (Exception e) {
             log.error("搜尋書籍時發生錯誤: field={}, keyword={}", field, keyword, e);
             throw new IOException("搜尋失敗: " + e.getMessage(), e);
