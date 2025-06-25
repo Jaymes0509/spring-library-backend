@@ -4,11 +4,11 @@ package tw.ispan.librarysystem.dto.feedback;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
-@Setter
+@Data
 public class FeedbackFormDto {
 
     @NotBlank(message = "姓名不能為空")

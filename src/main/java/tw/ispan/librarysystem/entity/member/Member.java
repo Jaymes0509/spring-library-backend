@@ -21,6 +21,10 @@ public class Member {
     @Column(name = "user_id") // 告訴 JPA 對應到 user_id 欄位
     private Long id;
 
+    public Long getUserId() {
+        return id;
+    }
+
     private String name;
     private String gender;
     private String idNumber;
