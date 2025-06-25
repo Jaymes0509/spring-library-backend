@@ -36,7 +36,7 @@ public class ReservationEntity {
     private String status;  // 舊有字串型狀態欄位（如 PENDING、CANCELLED）
 
     @Column(name = "reserve_status")
-    private Integer reserveStatus; // 0: 未完成, 1: 成功
+    private Integer reserveStatus = 1; // 0: 未完成, 1: 成功，預設值為 1
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

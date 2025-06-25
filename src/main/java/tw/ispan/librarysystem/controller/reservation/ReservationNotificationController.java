@@ -18,6 +18,7 @@ import tw.ispan.librarysystem.repository.books.BookRepository;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 
 @Tag(name = "預約通知測試", description = "測試預約成功通知郵件發送功能")
 @RestController
@@ -267,13 +268,14 @@ public class ReservationNotificationController {
             mockReservation.setReserveTime(LocalDateTime.now());
             mockReservation.setExpiryDate(LocalDateTime.now().plusDays(3));
             mockReservation.setStatus(ReservationEntity.STATUS_PENDING);
+            mockReservation.setReserveStatus(1);
             mockReservation.setCreatedAt(LocalDateTime.now());
             mockReservation.setUpdatedAt(LocalDateTime.now());
             mockReservation.setPickupLocation("First Floor Service Desk");
             mockReservation.setPickupMethod("Self Pickup");
             
             // 發送通知郵件
-            notificationService.sendReservationSuccessEmail(member, mockReservation);
+            notificationService.sendReservationSuccessEmail(member, List.of(mockReservation), null);
             
             response.put("success", true);
             response.put("message", "模擬預約通知郵件已發送");

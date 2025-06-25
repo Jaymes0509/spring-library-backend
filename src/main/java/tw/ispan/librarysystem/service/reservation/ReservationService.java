@@ -113,6 +113,7 @@ public class ReservationService {
         ReservationEntity entity = new ReservationEntity();
         entity.setUserId(dto.getUserId());
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : ReservationEntity.STATUS_PENDING);
+        entity.setReserveStatus(1); // 設置預約狀態為成功
         entity.setCreatedAt(LocalDateTime.now());
         entity.setUpdatedAt(LocalDateTime.now());
         entity.setReserveTime(dto.getReserveTime());
@@ -153,6 +154,7 @@ public class ReservationService {
         reservation.setBook(log.getBook());
         reservation.setReserveTime(log.getReserveTime());
         reservation.setStatus(ReservationEntity.STATUS_PENDING);
+        reservation.setReserveStatus(1); // 設置預約狀態為成功
         reservation.setCreatedAt(LocalDateTime.now());
         reservation.setUpdatedAt(LocalDateTime.now());
         reservation.setExpiryDate(log.getReserveTime().plusDays(3));

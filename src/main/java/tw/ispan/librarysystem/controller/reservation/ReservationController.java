@@ -61,12 +61,8 @@ public class ReservationController {
     private Integer getUserIdFromToken(String authHeader) {
         try {
             String token = authHeader.replace("Bearer ", "");
-            String email = JwtTool.parseToken(token);
-            Member member = memberService.getMemberByEmail(email);
-            if (member == null) {
-                throw new RuntimeException("找不到會員資訊");
-            }
-            return member.getId();
+            Long userId = JwtTool.parseUserIdFromToken(token);
+            return userId.intValue();
         } catch (Exception e) {
             throw new RuntimeException("無法從 token 獲取用戶資訊：" + e.getMessage());
         }
@@ -425,7 +421,7 @@ public class ReservationController {
             ReservationLogEntity log = logOpt.get();
             
             // 檢查使用者身份
-            if (!log.getUserId().equals(userId.longValue())) {
+            if (!log.getUserId().equals(userId)) {
                 return ResponseEntity.status(403).body(new ApiResponse(false, "無權限確認此預約"));
             }
             
