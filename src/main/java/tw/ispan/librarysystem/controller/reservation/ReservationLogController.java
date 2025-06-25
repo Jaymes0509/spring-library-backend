@@ -7,8 +7,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tw.ispan.librarysystem.service.reservation.ReservationLogService;
 import tw.ispan.librarysystem.entity.reservation.ReservationLogEntity;
+import tw.ispan.librarysystem.dto.reservation.ReservationLogDTO;
+import tw.ispan.librarysystem.dto.reservation.ReservationLogBatchDeleteRequest;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+import tw.ispan.librarysystem.repository.books.BookRepository;
+import tw.ispan.librarysystem.entity.books.BookEntity;
 
 @RestController
 @RequestMapping("/api/reservation-logs")
@@ -19,6 +25,9 @@ public class ReservationLogController {
 
     @Autowired
     private ReservationLogService reservationLogService;
+
+    @Autowired
+    private BookRepository bookRepository;
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> addReservationLog(@RequestBody Map<String, Object> request) {
@@ -70,6 +79,104 @@ public class ReservationLogController {
             logger.error("處理預約日誌時發生錯誤", e);
             response.put("success", false);
             response.put("message", "系統錯誤：" + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @GetMapping
+    public List<ReservationLogDTO> getLogsByUserId(@RequestParam("userId") Long userId) {
+        // 查詢該 userId 的所有 reservation_logs
+        List<ReservationLogEntity> logs = reservationLogService.getLogsByUserId(userId);
+        return logs.stream().map(log -> {
+            ReservationLogDTO dto = new ReservationLogDTO();
+            dto.setLogId(log.getId());
+            dto.setUserId(log.getUserId());
+            dto.setBookId(log.getBookId());
+            dto.setAction(log.getAction());
+            dto.setStatus(log.getStatus());
+            dto.setMessage(log.getMessage());
+            dto.setCreatedAt(log.getCreatedAt());
+            dto.setReserveTime(log.getReserveTime());
+            // 查書名、作者
+            BookEntity book = bookRepository.findById(log.getBookId().intValue()).orElse(null);
+            if (book != null) {
+                logger.info("logId={}, bookId={}, isbn={}", log.getId(), book.getBookId(), book.getIsbn());
+                dto.setTitle(book.getTitle());
+                dto.setAuthor(book.getAuthor());
+                dto.setIsbn(book.getIsbn());
+            }
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 刪除單個預約日誌
+     * @param logId 日誌ID
+     * @return 刪除結果
+     */
+    @DeleteMapping("/{logId}")
+    public ResponseEntity<Map<String, Object>> deleteLogById(@PathVariable Long logId) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            logger.info("收到刪除預約日誌請求: logId={}", logId);
+            
+            boolean deleted = reservationLogService.deleteLogById(logId);
+            
+            if (deleted) {
+                response.put("success", true);
+                response.put("message", "預約日誌刪除成功");
+                logger.info("預約日誌刪除成功: logId={}", logId);
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "找不到指定的預約日誌");
+                logger.warn("找不到指定的預約日誌: logId={}", logId);
+                return ResponseEntity.notFound().build();
+            }
+            
+        } catch (Exception e) {
+            logger.error("刪除預約日誌時發生錯誤: logId={}, error={}", logId, e.getMessage());
+            response.put("success", false);
+            response.put("message", "刪除失敗：" + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    /**
+     * 批量刪除預約日誌
+     * @param request 包含要刪除的日誌ID列表
+     * @return 刪除結果
+     */
+    @DeleteMapping("/batch")
+    public ResponseEntity<Map<String, Object>> batchDeleteLogs(@RequestBody ReservationLogBatchDeleteRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            logger.info("收到批量刪除預約日誌請求: logIds={}", request.getLogIds());
+            
+            if (request.getLogIds() == null || request.getLogIds().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "請提供要刪除的日誌ID列表");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            int deletedCount = reservationLogService.deleteLogsByIds(request.getLogIds());
+            
+            response.put("success", true);
+            response.put("message", String.format("成功刪除 %d 筆預約日誌", deletedCount));
+            response.put("deletedCount", deletedCount);
+            response.put("totalRequested", request.getLogIds().size());
+            
+            logger.info("批量刪除預約日誌完成: 請求刪除 {} 筆，實際刪除 {} 筆", 
+                       request.getLogIds().size(), deletedCount);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("批量刪除預約日誌時發生錯誤: error={}", e.getMessage());
+            response.put("success", false);
+            response.put("message", "批量刪除失敗：" + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
         }
     }

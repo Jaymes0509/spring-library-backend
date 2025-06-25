@@ -37,7 +37,7 @@ public class BookEntity {
     private String publisher;
 
     @Column(name = "publishdate")
-    private String publishdate;
+    private Integer publishdate;
 
     @Column(name = "version")
     private String version;
@@ -104,11 +104,11 @@ public class BookEntity {
         this.publisher = publisher;
     }
 
-    public String getPublishdate() {
+    public Integer getPublishdate() {
         return publishdate;
     }
 
-    public void setPublishdate(String publishdate) {
+    public void setPublishdate(Integer publishdate) {
         this.publishdate = publishdate;
     }
 

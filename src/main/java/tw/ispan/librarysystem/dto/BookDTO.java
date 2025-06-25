@@ -12,7 +12,7 @@ public class BookDTO {
     private String title;
     private String author;
     private String publisher;
-    private String publishdate;
+    private Integer publishdate;
     private String version;
     private String type;
     private String language;
@@ -93,7 +93,7 @@ public class BookDTO {
         return publisher;
     }
 
-    public String getPublishdate() {
+    public Integer getPublishdate() {
         return publishdate;
     }
 
@@ -150,7 +150,7 @@ public class BookDTO {
         this.publisher = publisher;
     }
 
-    public void setPublishdate(String publishdate) {
+    public void setPublishdate(Integer publishdate) {
         this.publishdate = publishdate;
     }
 
