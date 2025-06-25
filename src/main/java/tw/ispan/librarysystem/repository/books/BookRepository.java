@@ -19,7 +19,7 @@ public interface BookRepository extends JpaRepository<BookEntity, Integer>,JpaSp
     
     Optional<BookEntity> findByIsbn(String isbn);
 
-    // 🔸 為 Specification 查詢加上 EntityGraph，解決 lazy loading 問題
+    // 為 Specification 查詢加上 EntityGraph，解決 lazy loading 問題
     @Override
     Page<BookEntity> findAll(Specification<BookEntity> spec, Pageable pageable);
     

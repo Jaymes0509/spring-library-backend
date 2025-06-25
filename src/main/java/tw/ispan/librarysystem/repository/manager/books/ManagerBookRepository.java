@@ -17,6 +17,7 @@ import java.util.Optional;
 
 @Repository
 public interface ManagerBookRepository
+
         extends JpaRepository<BookEntity, Integer>, JpaSpecificationExecutor<BookEntity> {
 
     Optional<BookEntity> findByIsbn(String isbn);
@@ -49,4 +50,5 @@ public interface ManagerBookRepository
             @Param("yearTo") LocalDate yearTo,
             @Param("language") String language,
             Pageable pageable);
+
 }
