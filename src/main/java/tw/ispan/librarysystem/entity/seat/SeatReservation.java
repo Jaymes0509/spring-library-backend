@@ -36,7 +36,7 @@ public class SeatReservation {
 
 
     @Enumerated(EnumType.STRING)
-    private Status status;
+    private Status status;  // RESERVED or CANCELLED
 
     @CreationTimestamp
     private LocalDateTime createdAt;
