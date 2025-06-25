@@ -158,28 +158,28 @@ public class ReservationController {
             // 從 JWT token 獲取真實的用戶 ID
             Integer userId = getUserIdFromToken(authHeader);
             batchDto.setUserId(userId);
-            
-            for (ReservationBatchRequestDTO.BookReserveItem item : batchDto.getBooks()) {
-                ReservationResponseDTO.Result result = new ReservationResponseDTO.Result();
-                result.setBookId(item.getBookId());
-                try {
-                    ReservationDTO dto = new ReservationDTO();
-                    dto.setBookId(item.getBookId());
+        
+        for (ReservationBatchRequestDTO.BookReserveItem item : batchDto.getBooks()) {
+            ReservationResponseDTO.Result result = new ReservationResponseDTO.Result();
+            result.setBookId(item.getBookId());
+            try {
+                ReservationDTO dto = new ReservationDTO();
+                dto.setBookId(item.getBookId());
                     dto.setUserId(userId);
                     dto.setStatus(ReservationEntity.STATUS_PENDING);
                     if (item.getReserveTime() == null) {
                         throw new RuntimeException("資料缺失");
                     }
-                    dto.setReserveTime(java.time.LocalDateTime.parse(item.getReserveTime()));
-                    dto.setBatchId(batchReservationId);
+                dto.setReserveTime(java.time.LocalDateTime.parse(item.getReserveTime()));
+                dto.setBatchId(batchReservationId);
                     
                     // 設定取書相關資訊
                     dto.setPickupLocation(batchDto.getPickupLocation() != null ? batchDto.getPickupLocation() : "一樓服務台");
                     dto.setPickupMethod(batchDto.getPickupMethod() != null ? batchDto.getPickupMethod() : "親自取書");
-                    
-                    ReservationEntity entity = reservationService.createReservation(dto);
-                    result.setReservationId(entity.getReservationId());
-                    result.setStatus("success");
+                
+                ReservationEntity entity = reservationService.createReservation(dto);
+                result.setReservationId(entity.getReservationId());
+                result.setStatus("success");
                     
                     // 收集成功的預約
                     successfulReservations.add(entity);
@@ -193,19 +193,19 @@ public class ReservationController {
                     result.setStatus("fail");
                     result.setReason("資料缺失");
                     allSuccess = false;
-                } catch (Exception e) {
+            } catch (Exception e) {
                     System.out.println("預約失敗訊息：" + e.getMessage());
-                    result.setStatus("fail");
-                    result.setReason(e.getMessage());
-                    allSuccess = false;
-                    e.printStackTrace();
-                }
-                results.add(result);
+                result.setStatus("fail");
+                result.setReason(e.getMessage());
+                allSuccess = false;
+                e.printStackTrace();
             }
-            
-            response.setSuccess(allSuccess);
-            response.setResults(results);
-            response.setBatchReservationId(batchReservationId); // 回傳統一編號
+            results.add(result);
+        }
+        
+        response.setSuccess(allSuccess);
+        response.setResults(results);
+        response.setBatchReservationId(batchReservationId); // 回傳統一編號
             
             // 如果有成功的預約，發送批量通知郵件
             if (!successfulReservations.isEmpty()) {
@@ -283,19 +283,19 @@ public class ReservationController {
         try {
             Integer userId = getUserIdFromToken(authHeader);
             
-            return reservationRepository.findById(reservationId)
-                    .map(reservation -> {
+        return reservationRepository.findById(reservationId)
+                .map(reservation -> {
                         // 檢查預約是否屬於當前用戶
                         if (!reservation.getUserId().equals(userId)) {
                             throw new RuntimeException("無權限更新此預約");
                         }
                         
-                        reservation.setStatus(dto.getStatus());
-                        reservation.setUpdatedAt(LocalDateTime.now());
-                        ReservationEntity updated = reservationRepository.save(reservation);
-                        return ResponseEntity.ok(reservationService.convertToDTO(updated));
-                    })
-                    .orElse(ResponseEntity.notFound().build());
+                    reservation.setStatus(dto.getStatus());
+                    reservation.setUpdatedAt(LocalDateTime.now());
+                    ReservationEntity updated = reservationRepository.save(reservation);
+                    return ResponseEntity.ok(reservationService.convertToDTO(updated));
+                })
+                .orElse(ResponseEntity.notFound().build());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
@@ -401,7 +401,7 @@ public class ReservationController {
         try {
             Integer userId = getUserIdFromToken(authHeader);
             List<ReservationHistoryDTO> history = reservationService.getReservationHistoryByUserId(userId.toString(), includeCancelled);
-            return ResponseEntity.ok(history);
+                return ResponseEntity.ok(history);
         } catch (Exception e) {
             System.out.println("查詢預約歷史失敗：" + e.getMessage());
             return ResponseEntity.internalServerError().build();
