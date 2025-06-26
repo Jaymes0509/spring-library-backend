@@ -3,6 +3,7 @@ package tw.ispan.librarysystem.controller.manager.accounts;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import tw.ispan.librarysystem.dto.manager.accounts.ManagerMemberDTO;
 import tw.ispan.librarysystem.dto.manager.accounts.UpdateMemberDto;
@@ -22,6 +23,9 @@ public class ManagerMemberController {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping("/all")
     public Page<ManagerMemberDTO> getMembersPage(
@@ -66,6 +70,8 @@ public class ManagerMemberController {
             entity.setIdNumber(dto.getIdNumber());
         if (dto.getName() != null)
             entity.setName(dto.getName());
+        if (dto.getPassword() != null)
+            entity.setPassword(passwordEncoder.encode(dto.getPassword()));
         memberRepository.save(entity);
         System.out.println("updateMember: " + entity);
         return managerMemberService.getMemberDTOById(id);
