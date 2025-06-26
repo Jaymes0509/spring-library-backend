@@ -121,13 +121,18 @@ public class ReservationLogController {
                 dto.setMessage(log.getMessage());
                 dto.setCreatedAt(log.getCreatedAt());
                 dto.setReserveTime(log.getReserveTime());
-                // 查書名、作者
+                // 查書名、作者、ISBN、圖片網址
                 BookEntity book = bookRepository.findById(log.getBookId().intValue()).orElse(null);
                 if (book != null) {
                     logger.info("logId={}, bookId={}, isbn={}", log.getId(), book.getBookId(), book.getIsbn());
                     dto.setTitle(book.getTitle());
                     dto.setAuthor(book.getAuthor());
                     dto.setIsbn(book.getIsbn());
+                    
+                    // 添加圖片網址
+                    if (book.getBookDetail() != null) {
+                        dto.setImgUrl(book.getBookDetail().getImgUrl());
+                    }
                 }
                 return dto;
             }).collect(Collectors.toList());

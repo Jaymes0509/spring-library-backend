@@ -266,7 +266,7 @@ public class ReservationNotificationController {
             mockReservation.setUserId(userId);
             mockReservation.setBook(book);
             mockReservation.setReserveTime(LocalDateTime.now());
-            mockReservation.setExpiryDate(LocalDateTime.now().plusDays(3));
+            mockReservation.setExpiryDate(LocalDateTime.now().plusDays(7));
             mockReservation.setStatus(ReservationEntity.STATUS_PENDING);
             mockReservation.setReserveStatus(1);
             mockReservation.setCreatedAt(LocalDateTime.now());

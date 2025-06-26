@@ -121,7 +121,7 @@ public class ReservationController {
                 dto.setPickupMethod("親自取書");
             }
             
-            ReservationEntity entity = reservationService.createReservation(dto);
+            ReservationEntity entity = reservationService.createReservation(dto, true);
             result.setReservationId(entity.getReservationId());
             result.setStatus("success");
             response.setSuccess(true);
@@ -146,6 +146,11 @@ public class ReservationController {
         // 生成統一的批次預約編號
         String batchReservationId = "BATCH_" + System.currentTimeMillis();
         
+        // 添加調試日誌
+        System.out.println("=== 開始批量預約 ===");
+        System.out.println("批次ID: " + batchReservationId);
+        System.out.println("請求時間: " + java.time.LocalDateTime.now());
+        
         List<ReservationResponseDTO.Result> results = new ArrayList<>();
         List<ReservationEntity> successfulReservations = new ArrayList<>();
         boolean allSuccess = true;
@@ -154,11 +159,16 @@ public class ReservationController {
             // 從 JWT token 獲取真實的用戶 ID
             Integer userId = getUserIdFromToken(authHeader);
             batchDto.setUserId(userId);
+            
+            System.out.println("用戶ID: " + userId);
+            System.out.println("預約書籍數量: " + batchDto.getBooks().size());
         
         for (ReservationBatchRequestDTO.BookReserveItem item : batchDto.getBooks()) {
             ReservationResponseDTO.Result result = new ReservationResponseDTO.Result();
             result.setBookId(item.getBookId());
             try {
+                System.out.println("處理書籍ID: " + item.getBookId());
+                
                 ReservationDTO dto = new ReservationDTO();
                 dto.setBookId(item.getBookId());
                     dto.setUserId(userId);
@@ -173,12 +183,14 @@ public class ReservationController {
                     dto.setPickupLocation(batchDto.getPickupLocation() != null ? batchDto.getPickupLocation() : "一樓服務台");
                     dto.setPickupMethod(batchDto.getPickupMethod() != null ? batchDto.getPickupMethod() : "親自取書");
                 
-                ReservationEntity entity = reservationService.createReservation(dto);
+                ReservationEntity entity = reservationService.createReservation(dto, false);
                 result.setReservationId(entity.getReservationId());
                 result.setStatus("success");
                     
                     // 收集成功的預約
                     successfulReservations.add(entity);
+                    System.out.println("書籍ID " + item.getBookId() + " 預約成功，預約ID: " + entity.getReservationId());
+                    
                 } catch (java.time.format.DateTimeParseException e) {
                     System.out.println("預約失敗訊息：時間格式錯誤");
                     result.setStatus("fail");
@@ -202,19 +214,29 @@ public class ReservationController {
         response.setSuccess(allSuccess);
         response.setResults(results);
         response.setBatchReservationId(batchReservationId); // 回傳統一編號
+        
+        System.out.println("批量預約處理完成");
+        System.out.println("成功預約數量: " + successfulReservations.size());
+        System.out.println("總預約數量: " + batchDto.getBooks().size());
             
             // 如果有成功的預約，發送批量通知郵件
             if (!successfulReservations.isEmpty()) {
+                System.out.println("準備發送批量通知郵件...");
                 try {
                     // 根據 userId 查找會員資訊
                     Member member = memberRepository.findById(userId).orElse(null);
                     if (member != null) {
                         notificationService.sendBatchReservationSuccessEmail(member, successfulReservations, batchReservationId);
+                        System.out.println("批量通知郵件發送完成");
+                    } else {
+                        System.out.println("找不到會員資訊，無法發送郵件");
                     }
                 } catch (Exception e) {
                     // 郵件發送失敗不影響預約流程，只記錄錯誤
                     System.err.println("發送批量預約成功通知郵件失敗：" + e.getMessage());
                 }
+            } else {
+                System.out.println("沒有成功的預約，不發送郵件");
             }
             
         } catch (Exception e) {
@@ -222,6 +244,7 @@ public class ReservationController {
             response.setSuccess(false);
         }
         
+        System.out.println("=== 批量預約結束 ===\n");
         return ResponseEntity.ok(response);
     }
 
@@ -437,8 +460,8 @@ public class ReservationController {
                     .body(new ApiResponse(false, "此預約已被處理"));
             }
             
-            // 建立正式預約記錄
-            ReservationEntity reservation = reservationService.createReservation(log);
+            // 建立正式預約記錄（不發送郵件，因為這可能是重複確認）
+            ReservationEntity reservation = reservationService.createReservation(log, false);
             
             // 更新預約日誌狀態
             reservationLogService.updateLogStatus(log, "CONFIRMED");
@@ -451,6 +474,21 @@ public class ReservationController {
             
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ApiResponse(false, "確認預約失敗：" + e.getMessage()));
+        }
+    }
+
+    // 新增：查詢用戶預約統計資訊
+    @Operation(summary = "查詢用戶預約統計資訊")
+    @GetMapping("/stats")
+    @CheckJwt
+    public ResponseEntity<Map<String, Object>> getUserReservationStats(@RequestHeader("Authorization") String authHeader) {
+        try {
+            Integer userId = getUserIdFromToken(authHeader);
+            Map<String, Object> stats = reservationService.getUserReservationStats(userId);
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            System.out.println("查詢預約統計失敗：" + e.getMessage());
+            return ResponseEntity.internalServerError().build();
         }
     }
 } 
