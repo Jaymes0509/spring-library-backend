@@ -9,6 +9,8 @@ import tw.ispan.librarysystem.entity.member.Member;
 import tw.ispan.librarysystem.entity.recommendation.BookRecommendation;
 import tw.ispan.librarysystem.repository.member.MemberRepository;
 import tw.ispan.librarysystem.repository.recommendation.BookRecommendationRepository;
+import java.util.Map;
+import java.util.HashMap;
 
 import java.util.List;
 
@@ -42,7 +44,13 @@ public class BookRecommendationServiceImpl implements BookRecommendationService 
     }
 
     @Override
-    public int getUserCount(Member member) {
-        return repository.countByUserId(member.getUserId()); // 假設你有 getUserId() 方法
+    public Map<String, Integer> getUserCount(Member member) {
+        int used = repository.countByUserId(member.getUserId());
+        int remaining = 5 - used;
+
+        Map<String, Integer> map = new HashMap<>();
+        map.put("used", used);
+        map.put("remaining", remaining); // 前端使用這個 key
+        return map;
     }
 }

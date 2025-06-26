@@ -24,6 +24,10 @@ public class Member {
     public Long getUserId() {
         return id;
     }
+    public void setUserId(Long userId) {
+        this.id = userId;
+    }
+
 
     private String name;
     private String gender;

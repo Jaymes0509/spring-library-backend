@@ -15,6 +15,7 @@ public class BookRecommendationDto {
     private String publisher;
     private Integer publishYear;
 
+    @NotBlank(message = "推薦原因為必填")
     @Size(max = 1000, message = "內容不能超過 1000 字")
     private String reason;
 
