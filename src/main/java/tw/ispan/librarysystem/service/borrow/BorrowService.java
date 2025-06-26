@@ -42,7 +42,7 @@ public class BorrowService {
     private final NotificationService notificationService;
 
     @Transactional
-    public Borrow borrowBook(Integer userId, Integer bookId) {
+    public Borrow borrowBook(Long userId, Integer bookId) {
         logger.info("處理借書請求 - 使用者ID: {}, 書籍ID: {}", userId, bookId);
 
         // 檢查借閱限制
@@ -181,7 +181,7 @@ public class BorrowService {
             List<Borrow> borrows = jdbcTemplate.query(sql, (rs, rowNum) -> {
                 Borrow borrow = new Borrow();
                 borrow.setBorrowId(rs.getInt("borrow_id"));
-                borrow.setUserId(rs.getInt("user_id"));
+                borrow.setUserId(rs.getLong("user_id"));
                 borrow.setBookId(rs.getInt("book_id"));
                 borrow.setBorrowDate(rs.getTimestamp("borrow_date").toLocalDateTime());
                 borrow.setDueDate(rs.getTimestamp("due_date").toLocalDateTime());
@@ -205,7 +205,7 @@ public class BorrowService {
                 borrow.setBook(book);
                 
                 Member member = new Member();
-                member.setId(rs.getInt("user_id"));
+                member.setId(rs.getLong("user_id"));
                 member.setName(rs.getString("name"));
                 member.setEmail(rs.getString("email"));
                 borrow.setMember(member);
@@ -222,19 +222,19 @@ public class BorrowService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Borrow> getMemberBorrowHistory(Integer userId, Pageable pageable) {
+    public Page<Borrow> getMemberBorrowHistory(Long userId, Pageable pageable) {
         logger.info("獲取會員借閱歷史（分頁） - 使用者ID: {}", userId);
         return borrowRepository.findByUserId(userId, pageable);
     }
 
     @Transactional(readOnly = true)
-    public List<Borrow> getMemberCurrentBorrows(Integer userId) {
+    public List<Borrow> getMemberCurrentBorrows(Long userId) {
         logger.info("獲取會員當前借閱 - 使用者ID: {}", userId);
         return borrowRepository.findByUserIdAndStatus(userId, BorrowStatus.BORROWED);
     }
 
     @Transactional(readOnly = true)
-    public List<Borrow> getMemberOverdueBorrows(Integer userId) {
+    public List<Borrow> getMemberOverdueBorrows(Long userId) {
         logger.info("獲取會員逾期借閱 - 使用者ID: {}", userId);
         return borrowRepository.findByUserIdAndStatus(userId, BorrowStatus.OVERDUE);
     }
@@ -272,7 +272,7 @@ public class BorrowService {
      * 獲取借閱統計
      */
     @Transactional(readOnly = true)
-    public BorrowStatisticsDto getBorrowStatistics(Integer userId) {
+    public BorrowStatisticsDto getBorrowStatistics(Long userId) {
         logger.info("獲取借閱統計 - 使用者ID: {}", userId);
         
         try {
@@ -334,7 +334,7 @@ public class BorrowService {
      * 檢查借閱限制
      */
     @Transactional(readOnly = true)
-    public Map<String, Object> checkBorrowLimits(Integer userId) {
+    public Map<String, Object> checkBorrowLimits(Long userId) {
         logger.info("檢查借閱限制 - 使用者ID: {}", userId);
         
         Map<String, Object> limits = new HashMap<>();
@@ -364,9 +364,10 @@ public class BorrowService {
     }
 
     /**
+     *
      * 私有方法：檢查借閱限制
      */
-    private void validateBorrowLimits(Integer userId) {
+    private void validateBorrowLimits(Long userId) {
         Map<String, Object> limits = checkBorrowLimits(userId);
         
         if (!(Boolean) limits.get("canBorrow")) {
@@ -379,7 +380,7 @@ public class BorrowService {
     }
 
     @Transactional
-    public BorrowBatchResponseDto batchBorrow(Integer userId, List<BorrowBatchRequestDto.BorrowBookRequest> books) {
+    public BorrowBatchResponseDto batchBorrow(Long userId, List<BorrowBatchRequestDto.BorrowBookRequest> books) {
         logger.info("處理批量借書請求 - 使用者ID: {}, 書籍數量: {}", userId, books.size());
         
         BorrowBatchResponseDto response = new BorrowBatchResponseDto();
@@ -388,7 +389,7 @@ public class BorrowService {
         response.setResults(new ArrayList<>());
         
         // 檢查借閱限制
-        validateBorrowLimits(userId);
+        validateBorrowLimits(userId.longValue());
         
         // 檢查批量借書數量限制
         if (books.size() > MAX_BORROW_BOOKS) {
@@ -416,7 +417,7 @@ public class BorrowService {
                 }
 
                 // 檢查是否已借閱該書
-                if (borrowRepository.existsActiveBookBorrow(userId, bookRequest.getBookId())) {
+                if (borrowRepository.existsActiveBookBorrow(userId.longValue(), bookRequest.getBookId())) {
                     result.setStatus("failed");
                     result.setMessage("您已經借閱了這本書");
                     response.getResults().add(result);
@@ -425,7 +426,7 @@ public class BorrowService {
 
                 // 建立借閱記錄
                 Borrow borrow = new Borrow();
-                borrow.setUserId(userId);
+                borrow.setUserId(userId.longValue());
                 borrow.setBookId(bookRequest.getBookId());
                 borrow.setBorrowDate(LocalDateTime.now());
                 borrow.setDueDate(LocalDateTime.now().plusDays(borrowDays));

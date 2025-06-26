@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 public class ReservationLogRequest {
     @JsonProperty("user_id")
-    private Long userId;
+    private Integer userId;
     
     @JsonProperty("book_id")
     private Integer bookId;
@@ -19,8 +19,8 @@ public class ReservationLogRequest {
     private String note;
 
     // Getters and Setters
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
+    public Integer getUserId() { return userId; }
+    public void setUserId(Integer userId) { this.userId = userId; }
     
     public Integer getBookId() { return bookId; }
     public void setBookId(Integer bookId) { this.bookId = bookId; }

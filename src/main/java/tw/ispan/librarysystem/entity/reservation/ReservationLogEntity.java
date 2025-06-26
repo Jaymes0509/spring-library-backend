@@ -16,7 +16,7 @@ public class ReservationLogEntity {
     private Long id;
     
     @Column(name = "user_id")
-    private Long userId;
+    private Integer userId;
     
     @Column(name = "book_id")
     private Long bookId;
@@ -45,7 +45,7 @@ public class ReservationLogEntity {
         return id;
     }
     
-    public Long getUserId() {
+    public Integer getUserId() {
         return userId;
     }
     
@@ -82,7 +82,7 @@ public class ReservationLogEntity {
         this.id = id;
     }
     
-    public void setUserId(Long userId) {
+    public void setUserId(Integer userId) {
         this.userId = userId;
     }
     

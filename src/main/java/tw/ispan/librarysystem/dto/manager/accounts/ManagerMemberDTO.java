@@ -20,6 +20,7 @@ public class ManagerMemberDTO {
     private String addressDetail;
     private String email;
     private String phone;
+    private String password;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

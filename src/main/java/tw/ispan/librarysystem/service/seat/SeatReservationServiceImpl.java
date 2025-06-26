@@ -4,14 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tw.ispan.librarysystem.dto.seat.SeatReservationRequest;
+import tw.ispan.librarysystem.entity.seat.Seat;
 import tw.ispan.librarysystem.entity.seat.SeatReservation;
 import tw.ispan.librarysystem.entity.seat.SeatReservation.Status;
-import tw.ispan.librarysystem.entity.seat.SeatStatus;
 import tw.ispan.librarysystem.enums.TimeSlot;
 import tw.ispan.librarysystem.exception.SeatAlreadyReservedException;
 import tw.ispan.librarysystem.exception.UserAlreadyReservedException;
 import tw.ispan.librarysystem.repository.seat.SeatReservationRepository;
-import tw.ispan.librarysystem.repository.seat.SeatStatusRepository;
+import tw.ispan.librarysystem.repository.seat.SeatRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class SeatReservationServiceImpl implements SeatReservationService {
 
     private final SeatReservationRepository reservationRepo;
-    private final SeatStatusRepository seatStatusRepo;
+    private final SeatRepository seatRepo;
 
     @Override
     public List<String> getReservedSeatLabels(LocalDate date, TimeSlot timeSlot) {
@@ -39,7 +39,7 @@ public class SeatReservationServiceImpl implements SeatReservationService {
     @Override
     @Transactional
     public String reserveSeat(SeatReservationRequest request) {
-        SeatStatus seat = seatStatusRepo.findBySeatLabel(request.getSeatLabel())
+        Seat seat = seatRepo.findBySeatLabel(request.getSeatLabel())
                 .orElseThrow(() -> new IllegalArgumentException("找不到座位: " + request.getSeatLabel()));
 
         System.out.println("📥 預約請求內容：");
@@ -107,7 +107,7 @@ public class SeatReservationServiceImpl implements SeatReservationService {
     @Override
     @Transactional
     public boolean cancelReservationByUser(Integer userId, String seatLabel, LocalDate date, TimeSlot timeSlot) {
-        SeatStatus seat = seatStatusRepo.findBySeatLabel(seatLabel)
+        Seat seat = seatRepo.findBySeatLabel(seatLabel)
                 .orElseThrow(() -> new IllegalArgumentException("找不到座位：" + seatLabel));
 
         Optional<SeatReservation> reservationOpt = reservationRepo
