@@ -1,105 +1,84 @@
-package tw.ispan.librarysystem.controller.manager.books;
-
-import java.util.List;
-import java.util.Optional;
+package tw.ispan.librarysystem.controller.manager.accounts;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import tw.ispan.librarysystem.dto.BookDTO;
-import tw.ispan.librarysystem.dto.PageResponseDTO;
-import tw.ispan.librarysystem.dto.SearchCondition;
-import tw.ispan.librarysystem.entity.books.BookEntity;
-import tw.ispan.librarysystem.mapper.BookMapper;
-// import tw.ispan.librarysystem.repository.manager.books.ManagerBookRepository;
-import tw.ispan.librarysystem.service.books.BookDetailService;
-import tw.ispan.librarysystem.service.manager.books.ManagerBookService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
+import tw.ispan.librarysystem.dto.manager.accounts.ManagerMemberDTO;
+import tw.ispan.librarysystem.dto.manager.accounts.UpdateMemberDto;
+import tw.ispan.librarysystem.service.manager.accounts.ManagerMemberService;
+import tw.ispan.librarysystem.entity.member.Member;
+import tw.ispan.librarysystem.repository.member.MemberRepository;
 
 @RestController
-@RequestMapping("/api/manager/books")
-public class ManagerBookController {
+@RequestMapping("/api/manager/accounts")
+
+@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*", methods = { RequestMethod.GET, RequestMethod.POST,
+        RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE, RequestMethod.OPTIONS })
+public class ManagerMemberController {
 
     @Autowired
-    private ManagerBookService bookService;
+    private ManagerMemberService managerMemberService;
 
     @Autowired
-    private BookMapper bookMapper;
+    private MemberRepository memberRepository;
 
     @Autowired
-    private BookDetailService bookDetailService;
-
-    @PostMapping("/fill-details")
-    public ResponseEntity<String> fillMissingBookDetails() {
-        bookDetailService.updateMissingCoversAndSummaries();
-        return ResponseEntity.ok("補齊完成！");
-    }
-
-    @GetMapping("/{bookId}")
-    public BookDTO getBookById(@PathVariable Integer bookId) {
-        BookEntity book = bookService.findById(bookId).orElse(null);
-        return bookMapper.toDTO(book);
-    }
-
-    @GetMapping("/isbn/{isbn}")
-    public ResponseEntity<BookDTO> getBookByIsbn(@PathVariable String isbn) {
-        Optional<BookEntity> optional = bookService.findByIsbn(isbn);
-        if (optional.isPresent()) {
-            BookDTO dto = bookMapper.toDTO(optional.get());
-            return ResponseEntity.ok(dto);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    @GetMapping("/simple-search")
-    public PageResponseDTO<BookDTO> simpleSearch(
-            @RequestParam String field,
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "title") String sortField,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
-        Page<BookEntity> bookPage = bookService.simpleSearch(field, keyword, pageable);
-        return bookMapper.toPageDTO(bookPage);
-    }
-
-    @PostMapping("/advanced-search")
-    public PageResponseDTO<BookDTO> advancedSearch(
-            @RequestBody List<SearchCondition> conditions,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "title") String sortField,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
-        Page<BookEntity> bookPage = bookService.advancedSearch(conditions, pageable);
-        return bookMapper.toPageDTO(bookPage);
-    }
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping("/all")
-    public Page<BookDTO> getBooksPage(
+    public Page<ManagerMemberDTO> getMembersPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<BookEntity> bookPage = bookService.findAll(pageable);
-        return bookPage.map(bookMapper::toDTO);
+        return managerMemberService.getMembersPage(PageRequest.of(page, size));
     }
 
-    @GetMapping("/test")
-    public String test() {
-        return "test";
+    @GetMapping("/{id}")
+    public ManagerMemberDTO getMemberById(@PathVariable Long id) {
+        return managerMemberService.getMemberDTOById(id);
+    }
+
+    @PatchMapping("/{id}")
+    public ManagerMemberDTO updateMember(
+            @PathVariable Long id,
+            @RequestBody UpdateMemberDto dto) {
+        Member entity = memberRepository.findById(id).orElseThrow();
+        if (dto.getEmail() != null)
+            entity.setEmail(dto.getEmail());
+        if (dto.getPhone() != null)
+            entity.setPhone(dto.getPhone());
+        if (dto.getAddressCounty() != null)
+            entity.setAddressCounty(dto.getAddressCounty());
+        if (dto.getAddressTown() != null)
+            entity.setAddressTown(dto.getAddressTown());
+        if (dto.getAddressZip() != null)
+            entity.setAddressZip(dto.getAddressZip());
+        if (dto.getAddressDetail() != null)
+            entity.setAddressDetail(dto.getAddressDetail());
+        if (dto.getBirthDate() != null)
+            entity.setBirthDate(dto.getBirthDate());
+        if (dto.getEducation() != null)
+            entity.setEducation(dto.getEducation());
+        if (dto.getOccupation() != null)
+            entity.setOccupation(dto.getOccupation());
+        if (dto.getNationality() != null)
+            entity.setNationality(dto.getNationality());
+        if (dto.getGender() != null)
+            entity.setGender(dto.getGender());
+        if (dto.getIdNumber() != null)
+            entity.setIdNumber(dto.getIdNumber());
+        if (dto.getName() != null)
+            entity.setName(dto.getName());
+        if (dto.getPassword() != null)
+            entity.setPassword(passwordEncoder.encode(dto.getPassword()));
+        memberRepository.save(entity);
+        System.out.println("updateMember: " + entity);
+        return managerMemberService.getMemberDTOById(id);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteMember(@PathVariable Long id) {
+        managerMemberService.deleteMember(id);
     }
 }
