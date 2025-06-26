@@ -9,13 +9,15 @@ public class TopRankingsBookDto {
     private String categoryName; // 分類名稱
     private Double averageRating; // 平均評分（貝式平均）
     private Long statCount;       // 借閱/評論/預約數（依榜別而變）
+    private String description;   // 書籍簡介 ✅ 新增欄位
 
     // ⚠️ 無參數建構子（JPA 或 Jackson 需要）
     public TopRankingsBookDto() {}
 
-    // ✅ 全參數建構子
+    // ✅ 全參數建構子（已補上 description）
     public TopRankingsBookDto(Integer bookId, String title, String author, String cover,
-                              String categoryName, Double averageRating, Long statCount) {
+                              String categoryName, Double averageRating, Long statCount,
+                              String description) {
         this.bookId = bookId;
         this.title = title;
         this.author = author;
@@ -23,6 +25,7 @@ public class TopRankingsBookDto {
         this.categoryName = categoryName;
         this.averageRating = averageRating;
         this.statCount = statCount;
+        this.description = description;
     }
 
     // --- Getter / Setter ---
@@ -73,5 +76,12 @@ public class TopRankingsBookDto {
     }
     public void setStatCount(Long statCount) {
         this.statCount = statCount;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
