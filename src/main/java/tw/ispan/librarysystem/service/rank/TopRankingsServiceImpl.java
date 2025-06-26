@@ -57,7 +57,6 @@ public class TopRankingsServiceImpl implements TopRankingsService {
             case "rating":
                 double m = 5.0;
                 double c = 3;
-
                 long minReviewCount = 10;
 
                 return topRankingsRepository.findDetailedRatings(
