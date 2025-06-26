@@ -4,6 +4,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import tw.ispan.librarysystem.dto.manager.accounts.ManagerMemberDTO;
 import tw.ispan.librarysystem.dto.manager.accounts.UpdateMemberDto;
@@ -18,6 +19,9 @@ public class ManagerMemberService {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public List<ManagerMemberDTO> getAllMembers() {
         List<Member> members = memberRepository.findAll();
@@ -45,6 +49,10 @@ public class ManagerMemberService {
         member.setAddressDetail(dto.getAddressDetail());
         member.setEmail(dto.getEmail());
         member.setPhone(dto.getPhone());
+        if (dto.getPassword() != null) {
+            member.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
+
         memberRepository.save(member);
         return toDTO(member);
     }
