@@ -27,7 +27,6 @@ public class BookElasticsearchController {
 
     @GetMapping("/simple-search")
     public ResponseEntity<?> search(
-        @RequestParam String field,
         @RequestParam String keyword,
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size,
@@ -36,10 +35,6 @@ public class BookElasticsearchController {
     ) {
         try {
             // 參數驗證
-            if (field == null || field.trim().isEmpty()) {
-                return ResponseEntity.badRequest().body(createErrorResponse("搜尋欄位不能為空"));
-            }
-            
             if (keyword == null || keyword.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(createErrorResponse("搜尋關鍵字不能為空"));
             }
@@ -56,8 +51,9 @@ public class BookElasticsearchController {
                 return ResponseEntity.badRequest().body(createErrorResponse("排序方向必須是 'asc' 或 'desc'"));
             }
 
+            // 自動使用全文搜尋
             PageResponseDTO<BookSearchResponse> result = service.searchBooks(
-                field.trim(), 
+                "fulltext",  // 固定使用 fulltext
                 keyword.trim(), 
                 page, 
                 size, 
@@ -65,15 +61,15 @@ public class BookElasticsearchController {
                 sortDir
             );
             
-            log.info("搜尋成功: field={}, keyword={}, page={}, size={}, 結果數量={}", 
-                field, keyword, page, size, result.getContent().size());
+            log.info("\n簡化搜尋成功: keyword={}, page={}, size={}, 結果數量={}", 
+                keyword, page, size, result.getContent().size());
             
             return ResponseEntity.ok(result);
             
         } catch (Exception e) {
-            log.error("搜尋書籍時發生錯誤: field={}, keyword={}", field, keyword, e);
+            log.error("\n簡化搜尋書籍時發生錯誤: keyword={}", keyword, e);
             return ResponseEntity.internalServerError()
-                .body(createErrorResponse("搜尋失敗: " + e.getMessage()));
+                .body(createErrorResponse("\n搜尋失敗: " + e.getMessage()));
         }
     }
 
