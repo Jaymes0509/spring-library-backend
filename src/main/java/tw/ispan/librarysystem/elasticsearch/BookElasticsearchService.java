@@ -76,23 +76,25 @@ public class BookElasticsearchService {
                     queryType = "term (isbn)";
                     query = Query.of(q -> q.term(t -> t.field("isbn").value(keyword)));
                 } 
-                // 2. 處理多詞彙搜尋（片語搜尋）
-                else if (keyword.contains(" ") && keyword.trim().split("\\s+").length > 1) {
+                // 2. 處理萬用字元搜尋 (使用真正的 wildcard 查詢)
+                else if (keyword.contains("*") || keyword.contains("?")) {
+                    queryType = "wildcard (multi-field with boost)";
+                    query = Query.of(q -> q.bool(b -> b
+                        .should(s -> s.wildcard(w -> w.field("title").value(keyword).boost(3.0f)))
+                        .should(s -> s.wildcard(w -> w.field("author").value(keyword).boost(2.0f)))
+                        .should(s -> s.wildcard(w -> w.field("publisher").value(keyword).boost(1.0f)))
+                        .should(s -> s.wildcard(w -> w.field("isbn").value(keyword).boost(1.0f)))
+                    ));
+                } 
+                // 3. 處理多詞彙搜尋（片語搜尋）- 修正判斷邏輯
+                else if (isMultiWordQuery(keyword)) {
                     queryType = "multi_match (phrase with boost)";
                     query = Query.of(q -> q.multiMatch(m -> m
                         .fields("title^3", "author^2", "publisher", "isbn")
                         .query(keyword)
                         .type(TextQueryType.Phrase)
                         .minimumShouldMatch("75%")
-                    ));
-                } 
-                // 3. 處理萬用字元搜尋
-                else if (keyword.contains("*") || keyword.contains("?")) {
-                    queryType = "multi_match (wildcard)";
-                    query = Query.of(q -> q.multiMatch(m -> m
-                        .fields("title^3", "author^2", "publisher", "isbn")
-                        .query(keyword)
-                        .type(TextQueryType.BestFields)
+                        .slop(1)
                     ));
                 } 
                 // 4. 一般單詞搜尋
@@ -103,7 +105,7 @@ public class BookElasticsearchService {
                         .query(keyword)
                         .type(TextQueryType.BestFields)
                         .minimumShouldMatch("75%")
-                        .fuzziness("AUTO")  // 加入模糊匹配
+                        .fuzziness("AUTO")
                     ));
                 }
             } else {
@@ -111,7 +113,7 @@ public class BookElasticsearchService {
                 query = buildQueryByInput(field, keyword);
             }
 
-            log.info("查詢型態: {}, field={}, keyword={}", queryType, field, keyword);
+            log.info("\n查詢型態: {}, field={}, keyword={}", queryType, field, keyword);
 
             response = client.search(s -> s
                 .index(BOOKS_INDEX)
@@ -170,7 +172,15 @@ public class BookElasticsearchService {
 
         } catch (Exception e) {
             log.error("搜尋書籍時發生錯誤: field={}, keyword={}", field, keyword, e);
-            throw new IOException("搜尋失敗: " + e.getMessage(), e);
+            
+            // 改善錯誤處理
+            if (e instanceof IllegalArgumentException) {
+                throw new IOException("搜尋參數錯誤: " + e.getMessage(), e);
+            } else if (e instanceof IOException) {
+                throw (IOException) e;
+            } else {
+                throw new IOException("搜尋失敗: " + e.getMessage(), e);
+            }
         }
     }
 
@@ -212,20 +222,45 @@ public class BookElasticsearchService {
         }
     }
 
-    // 根據使用者輸入自動判斷查詢類型
+    /**
+     * 判斷是否為多詞彙查詢
+     */
+    private boolean isMultiWordQuery(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return false;
+        }
+        
+        String trimmedKeyword = keyword.trim();
+        String[] words = trimmedKeyword.split("\\s+");
+        
+        // 至少包含2個詞彙，且不是單一詞彙
+        return words.length >= 2 && !trimmedKeyword.equals(words[0]);
+    }
+
+    /**
+     * 根據使用者輸入自動判斷查詢類型 - 修正萬用字元處理
+     */
     private co.elastic.clients.elasticsearch._types.query_dsl.Query buildQueryByInput(String field, String input) {
         if (input == null || input.isBlank()) {
             throw new IllegalArgumentException("查詢關鍵字不能為空");
         }
+        
+        // 修正: 萬用字元查詢應該使用 wildcard
+        if (input.contains("*") || input.contains("?")) {
+            return co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q.wildcard(w -> w
+                .field(field)
+                .value(input)
+            ));
+        }
+        
         if (field.equals("isbn") && input.matches("\\d{13}")) {
             return co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q.term(t -> t.field(field).value(input)));
         }
-        if (input.contains("*") || input.contains("?")) {
-            return co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q.wildcard(w -> w.field(field).value(input)));
-        }
+        
         if (input.contains(" ")) {
             return co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q.matchPhrase(mp -> mp.field(field).query(input)));
         }
+        
         return co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q.match(m -> m.field(field).query(input)));
     }
 }
