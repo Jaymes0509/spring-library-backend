@@ -16,6 +16,7 @@ public class UpdateMemberDto {
     private String addressDetail;
     private String email;
     private String phone;
+    private String password;
 
     // getters and setters
     // ...（可用 IDE 自動產生）
@@ -121,5 +122,13 @@ public class UpdateMemberDto {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }
