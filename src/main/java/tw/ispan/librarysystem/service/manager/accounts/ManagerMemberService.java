@@ -34,7 +34,7 @@ public class ManagerMemberService {
     }
 
     public ManagerMemberDTO updateMember(Long id, UpdateMemberDto dto) {
-        Member member = memberRepository.findById(id)
+        Member member = memberRepository.findById(Math.toIntExact(id))
                 .orElseThrow(() -> new RuntimeException("找不到會員"));
         member.setName(dto.getName());
         member.setGender(dto.getGender());
@@ -58,13 +58,13 @@ public class ManagerMemberService {
     }
 
     public ManagerMemberDTO getMemberDTOById(Long id) {
-        Member member = memberRepository.findById(id)
+        Member member = memberRepository.findById(Math.toIntExact(id))
                 .orElseThrow(() -> new RuntimeException("找不到會員"));
         return toDTO(member);
     }
 
     public void deleteMember(Long id) {
-        memberRepository.deleteById(id);
+        memberRepository.deleteById(Math.toIntExact(id));
     }
 
     private ManagerMemberDTO toDTO(Member member) {

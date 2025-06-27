@@ -19,7 +19,7 @@ public class Seat {
     private Status status;//這裡 Status 是 enum（AVAILABLE / BROKEN）
 
     public enum Status {
-        AVAILABLE, BROKEN
+        AVAILABLE, RESERVED, BROKEN
     }
 
 }
