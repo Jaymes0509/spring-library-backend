@@ -7,7 +7,7 @@ import tw.ispan.librarysystem.entity.member.Member;
 
 import java.util.Optional;
 
-public interface MemberRepository extends JpaRepository<Member, Integer> {
+public interface MemberRepository extends JpaRepository<Member, Long> {
     boolean existsByEmail(String email);
 
     boolean existsByIdNumber(String idNumber); // 用來檢查重複身分證
