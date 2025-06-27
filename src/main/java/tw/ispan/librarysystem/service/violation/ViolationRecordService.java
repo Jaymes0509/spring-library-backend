@@ -63,7 +63,7 @@ public class ViolationRecordService {
             );
             
             // 獲取用戶資訊
-            Member member = memberRepository.findById(violation.getUserId()).orElse(null);
+            Member member = memberRepository.findById(violation.getUserId().longValue()).orElse(null);
             if (member != null) {
                 dto.setUserName(member.getName());
                 dto.setUserEmail(member.getEmail());
@@ -92,7 +92,7 @@ public class ViolationRecordService {
                 );
                 
                 // 獲取用戶資訊
-                Member member = memberRepository.findById(violation.getUserId()).orElse(null);
+                Member member = memberRepository.findById(violation.getUserId().longValue()).orElse(null);
                 if (member != null) {
                     dto.setUserName(member.getName());
                     dto.setUserEmail(member.getEmail());

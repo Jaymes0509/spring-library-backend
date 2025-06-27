@@ -224,7 +224,7 @@ public class ReservationController {
                 System.out.println("準備發送批量通知郵件...");
                 try {
                     // 根據 userId 查找會員資訊
-                    Member member = memberRepository.findById(userId).orElse(null);
+                    Member member = memberRepository.findById(userId.longValue()).orElse(null);
                     if (member != null) {
                         notificationService.sendBatchReservationSuccessEmail(member, successfulReservations, batchReservationId);
                         System.out.println("批量通知郵件發送完成");

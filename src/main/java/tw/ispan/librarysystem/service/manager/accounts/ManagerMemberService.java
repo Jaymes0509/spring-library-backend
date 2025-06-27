@@ -59,7 +59,7 @@ public class ManagerMemberService {
 
     public ManagerMemberDTO getMemberDTOById(Long id) {
         Member member = memberRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("找不到會員"));
+                .orElseThrow(() -> new RuntimeException("找不到會員 ID: " + id));
         return toDTO(member);
     }
 

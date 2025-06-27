@@ -46,7 +46,7 @@ public class ReservationNotificationService {
      */
     public void sendReservationSuccessEmail(ReservationEntity reservation) {
         // 根據 userId 查找會員資訊
-        Member member = memberRepository.findById(reservation.getUserId()).orElse(null);
+        Member member = memberRepository.findById(reservation.getUserId().longValue()).orElse(null);
         
         if (member == null) {
             throw new RuntimeException("找不到會員資訊，無法發送通知郵件");

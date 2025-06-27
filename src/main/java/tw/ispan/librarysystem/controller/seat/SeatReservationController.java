@@ -56,7 +56,7 @@ public class SeatReservationController {
             Optional<Seat> optionalSeat = seatRepo.findBySeatLabel(request.getSeatLabel());
             if (optionalSeat.isPresent()) {
                 Seat seat = optionalSeat.get();
-                seat.setStatus(Seat.Status.RESERVED); //  正確 enum 用法
+                seat.setStatus(Seat.Status.AVAILABLE); // 修正：使用正確的 enum 值
                 seatRepo.save(seat);
             } else {
                 return ResponseEntity.badRequest().body("❌ 座位不存在");

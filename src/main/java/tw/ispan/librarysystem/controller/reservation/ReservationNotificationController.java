@@ -111,7 +111,7 @@ public class ReservationNotificationController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            Integer userId = Integer.valueOf(request.get("userId").toString());
+            Long userId = Long.valueOf(request.get("userId").toString());
 
             // 支援單個 reservationId 或多個 reservationIds
             Object reservationIdObj = request.get("reservationId");
@@ -179,7 +179,7 @@ public class ReservationNotificationController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            Integer userId = Integer.valueOf(request.get("userId").toString());
+            Long userId = Long.valueOf(request.get("userId").toString());
             Integer reservationId = Integer.valueOf(request.get("reservationId").toString());
 
             // 查找預約記錄
@@ -209,7 +209,7 @@ public class ReservationNotificationController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            Integer userId = Integer.valueOf(request.get("userId").toString());
+            Long userId = Long.valueOf(request.get("userId").toString());
             String batchId = request.get("batchId").toString();
 
             // 查找該批次的所有預約記錄
@@ -251,7 +251,7 @@ public class ReservationNotificationController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            Integer userId = Integer.valueOf(request.get("userId").toString());
+            Long userId = Long.valueOf(request.get("userId").toString());
             Integer bookId = Integer.valueOf(request.get("bookId").toString());
 
             // 查找會員和書籍資訊
@@ -263,7 +263,7 @@ public class ReservationNotificationController {
 
             // 創建模擬預約記錄
             ReservationEntity mockReservation = new ReservationEntity();
-            mockReservation.setUserId(userId);
+            mockReservation.setUserId(userId.intValue());
             mockReservation.setBook(book);
             mockReservation.setReserveTime(LocalDateTime.now());
             mockReservation.setExpiryDate(LocalDateTime.now().plusDays(7));
