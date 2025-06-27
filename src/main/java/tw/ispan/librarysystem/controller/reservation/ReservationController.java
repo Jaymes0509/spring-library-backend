@@ -66,7 +66,7 @@ public class ReservationController {
             if (member == null) {
                 throw new RuntimeException("找不到會員資訊");
             }
-            return member.getId();
+            return Math.toIntExact(member.getId());
         } catch (Exception e) {
             throw new RuntimeException("無法從 token 獲取用戶資訊：" + e.getMessage());
         }

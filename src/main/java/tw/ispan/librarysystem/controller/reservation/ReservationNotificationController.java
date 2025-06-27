@@ -18,6 +18,7 @@ import tw.ispan.librarysystem.repository.books.BookRepository;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 
 @Tag(name = "預約通知測試", description = "測試預約成功通知郵件發送功能")
 @RestController
@@ -120,7 +121,7 @@ public class ReservationNotificationController {
                 // 單個預約ID
                 Integer reservationId = Integer.valueOf(reservationIdObj.toString());
                 ReservationEntity reservation = reservationRepository.findById(reservationId)
-                    .orElseThrow(() -> new RuntimeException("找不到預約記錄"));
+                        .orElseThrow(() -> new RuntimeException("找不到預約記錄"));
 
                 notificationService.sendReservationSuccessEmail(reservation);
 
@@ -138,13 +139,13 @@ public class ReservationNotificationController {
                 for (Object idObj : reservationIds) {
                     Integer reservationId = Integer.valueOf(idObj.toString());
                     ReservationEntity reservation = reservationRepository.findById(reservationId)
-                        .orElseThrow(() -> new RuntimeException("找不到預約記錄 ID: " + reservationId));
+                            .orElseThrow(() -> new RuntimeException("找不到預約記錄 ID: " + reservationId));
                     reservations.add(reservation);
                 }
 
                 // 查找會員資訊
                 Member member = memberRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("找不到會員資訊"));
+                        .orElseThrow(() -> new RuntimeException("找不到會員資訊"));
 
                 // 生成批次ID
                 String batchId = "BATCH_" + System.currentTimeMillis();
@@ -183,7 +184,7 @@ public class ReservationNotificationController {
 
             // 查找預約記錄
             ReservationEntity reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("找不到預約記錄"));
+                    .orElseThrow(() -> new RuntimeException("找不到預約記錄"));
 
             // 發送通知郵件
             notificationService.sendReservationSuccessEmail(reservation);
@@ -213,8 +214,8 @@ public class ReservationNotificationController {
 
             // 查找該批次的所有預約記錄
             java.util.List<ReservationEntity> reservations = reservationRepository.findAll().stream()
-                .filter(r -> batchId.equals(r.getBatchId()))
-                .collect(java.util.stream.Collectors.toList());
+                    .filter(r -> batchId.equals(r.getBatchId()))
+                    .collect(java.util.stream.Collectors.toList());
 
             if (reservations.isEmpty()) {
                 response.put("success", false);
@@ -224,7 +225,7 @@ public class ReservationNotificationController {
 
             // 查找會員資訊
             Member member = memberRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("找不到會員資訊"));
+                    .orElseThrow(() -> new RuntimeException("找不到會員資訊"));
 
             // 發送批量通知郵件
             notificationService.sendBatchReservationSuccessEmail(member, reservations, batchId);
@@ -255,10 +256,10 @@ public class ReservationNotificationController {
 
             // 查找會員和書籍資訊
             Member member = memberRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("找不到會員資訊"));
+                    .orElseThrow(() -> new RuntimeException("找不到會員資訊"));
 
             BookEntity book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new RuntimeException("找不到書籍資訊"));
+                    .orElseThrow(() -> new RuntimeException("找不到書籍資訊"));
 
             // 創建模擬預約記錄
             ReservationEntity mockReservation = new ReservationEntity();
@@ -267,13 +268,14 @@ public class ReservationNotificationController {
             mockReservation.setReserveTime(LocalDateTime.now());
             mockReservation.setExpiryDate(LocalDateTime.now().plusDays(3));
             mockReservation.setStatus(ReservationEntity.STATUS_PENDING);
+            mockReservation.setReserveStatus(1);
             mockReservation.setCreatedAt(LocalDateTime.now());
             mockReservation.setUpdatedAt(LocalDateTime.now());
             mockReservation.setPickupLocation("First Floor Service Desk");
             mockReservation.setPickupMethod("Self Pickup");
 
             // 發送通知郵件
-            notificationService.sendReservationSuccessEmail(member, mockReservation);
+            notificationService.sendReservationSuccessEmail(member, List.of(mockReservation), null);
 
             response.put("success", true);
             response.put("message", "模擬預約通知郵件已發送");
