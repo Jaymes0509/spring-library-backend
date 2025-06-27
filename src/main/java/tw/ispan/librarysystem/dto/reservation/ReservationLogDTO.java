@@ -2,6 +2,7 @@
 package tw.ispan.librarysystem.dto.reservation;
 
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ReservationLogDTO {
     private Long logId;
@@ -16,6 +17,9 @@ public class ReservationLogDTO {
     private String title;
     private String author;
     private String isbn;
+    
+    @JsonProperty("img_url")
+    private String imgUrl;
 
     public Long getLogId() { return logId; }
     public void setLogId(Long logId) { this.logId = logId; }
@@ -52,4 +56,7 @@ public class ReservationLogDTO {
 
     public String getIsbn() { return isbn; }
     public void setIsbn(String isbn) { this.isbn = isbn; }
+
+    public String getImgUrl() { return imgUrl; }
+    public void setImgUrl(String imgUrl) { this.imgUrl = imgUrl; }
 } 
