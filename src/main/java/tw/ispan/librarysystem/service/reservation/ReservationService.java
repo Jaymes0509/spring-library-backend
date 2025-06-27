@@ -74,7 +74,7 @@ public class ReservationService {
         // 設定取書相關資訊
         dto.setPickupLocation(reservation.getPickupLocation());
         dto.setPickupMethod(reservation.getPickupMethod());
-        dto.setPickupTime(reservation.getReserveTime().plusDays(3)); // 假設預約後3天內取書
+        dto.setPickupTime(reservation.getReserveTime().plusDays(7)); // 預約後7天內取書
 
         if (reservation.getBook() != null) {
             dto.setBookId(reservation.getBook().getBookId());
@@ -94,29 +94,47 @@ public class ReservationService {
 
     // 新增：建立預約（單本）
     public ReservationEntity createReservation(ReservationDTO dto) {
+        return createReservation(dto, true); // 預設發送郵件
+    }
+
+    public ReservationEntity createReservation(ReservationDTO dto, boolean sendEmail) {
         // 1. 檢查 bookId
         if (dto.getBookId() == null) {
             throw new RuntimeException("資料缺失");
         }
-        // 2. 檢查是否已預約過（PENDING 狀態）
+        
+        // 2. 檢查用戶的待領取和已領取書籍數量是否已達上限（10本）
+        long activeReservationsCount = reservationRepository.findByUserId(dto.getUserId()).stream()
+            .filter(r -> ReservationEntity.STATUS_PENDING.equals(r.getStatus()) || 
+                        ReservationEntity.STATUS_COMPLETED.equals(r.getStatus()))
+            .count();
+        
+        if (activeReservationsCount >= 10) {
+            throw new RuntimeException("您已有 " + activeReservationsCount + " 本待領取或已領取的書籍，已達上限（10本），無法再進行預約");
+        }
+        
+        // 3. 檢查是否已預約過（PENDING 狀態）
         boolean alreadyReserved = reservationRepository
             .findByUserId(dto.getUserId()).stream()
             .anyMatch(r -> r.getBook() != null && r.getBook().getBookId().equals(dto.getBookId()) && ReservationEntity.STATUS_PENDING.equals(r.getStatus()));
         if (alreadyReserved) {
             throw new RuntimeException("已預約過");
         }
-        // 3. 檢查書籍是否已借出
+        
+        // 4. 檢查書籍是否已借出
         boolean isBorrowed = borrowRepository.existsActiveBookBorrow(dto.getUserId().longValue(), dto.getBookId());
         if (isBorrowed) {
             throw new RuntimeException("書籍已借出");
         }
+        
         ReservationEntity entity = new ReservationEntity();
         entity.setUserId(dto.getUserId());
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : ReservationEntity.STATUS_PENDING);
+        entity.setReserveStatus(1); // 設置預約狀態為成功
         entity.setCreatedAt(LocalDateTime.now());
         entity.setUpdatedAt(LocalDateTime.now());
         entity.setReserveTime(dto.getReserveTime());
-        entity.setExpiryDate(dto.getReserveTime() != null ? dto.getReserveTime().plusDays(3) : null);
+        entity.setExpiryDate(dto.getReserveTime() != null ? dto.getReserveTime().plusDays(7) : null);
         
         // 設定 batchId
         if (dto.getBatchId() != null) {
@@ -127,20 +145,22 @@ public class ReservationService {
         entity.setPickupLocation(dto.getPickupLocation());
         entity.setPickupMethod(dto.getPickupMethod());
         
-        // 關聯書籍
-        tw.ispan.librarysystem.entity.books.BookEntity book = new tw.ispan.librarysystem.entity.books.BookEntity();
-        book.setBookId(dto.getBookId());
+        // 關聯書籍 - 從資料庫查詢完整的書籍資訊
+        BookEntity book = bookRepository.findById(dto.getBookId())
+            .orElseThrow(() -> new RuntimeException("找不到書籍資訊，bookId: " + dto.getBookId()));
         entity.setBook(book);
         
         // 儲存預約
         ReservationEntity savedEntity = reservationRepository.save(entity);
         
-        // 發送預約成功通知郵件
-        try {
-            notificationService.sendReservationSuccessEmail(savedEntity);
-        } catch (Exception e) {
-            // 郵件發送失敗不影響預約流程，只記錄錯誤
-            System.err.println("發送預約成功通知郵件失敗：" + e.getMessage());
+        // 只有在需要時才發送預約成功通知郵件
+        if (sendEmail) {
+            try {
+                notificationService.sendReservationSuccessEmail(savedEntity);
+            } catch (Exception e) {
+                // 郵件發送失敗不影響預約流程，只記錄錯誤
+                System.err.println("發送預約成功通知郵件失敗：" + e.getMessage());
+            }
         }
         
         return savedEntity;
@@ -148,14 +168,30 @@ public class ReservationService {
 
     // 從預約日誌建立正式預約
     public ReservationEntity createReservation(ReservationLogEntity log) {
+        return createReservation(log, true); // 預設發送郵件
+    }
+
+    // 從預約日誌建立正式預約
+    public ReservationEntity createReservation(ReservationLogEntity log, boolean sendEmail) {
+        // 檢查用戶的待領取和已領取書籍數量是否已達上限（10本）
+        long activeReservationsCount = reservationRepository.findByUserId(log.getUserId().intValue()).stream()
+            .filter(r -> ReservationEntity.STATUS_PENDING.equals(r.getStatus()) || 
+                        ReservationEntity.STATUS_COMPLETED.equals(r.getStatus()))
+            .count();
+        
+        if (activeReservationsCount >= 10) {
+            throw new RuntimeException("您已有 " + activeReservationsCount + " 本待領取或已領取的書籍，已達上限（10本），無法再進行預約");
+        }
+        
         ReservationEntity reservation = new ReservationEntity();
         reservation.setUserId(log.getUserId().intValue()); // 轉換 Long 到 Integer
         reservation.setBook(log.getBook());
         reservation.setReserveTime(log.getReserveTime());
         reservation.setStatus(ReservationEntity.STATUS_PENDING);
+        reservation.setReserveStatus(1); // 設置預約狀態為成功
         reservation.setCreatedAt(LocalDateTime.now());
         reservation.setUpdatedAt(LocalDateTime.now());
-        reservation.setExpiryDate(log.getReserveTime().plusDays(3));
+        reservation.setExpiryDate(log.getReserveTime().plusDays(7));
         
         // 設定預設的取書相關資訊
         reservation.setPickupLocation("一樓服務台");
@@ -164,15 +200,48 @@ public class ReservationService {
         // 儲存預約
         ReservationEntity savedReservation = reservationRepository.save(reservation);
         
-        // 發送預約成功通知郵件
-        try {
-            notificationService.sendReservationSuccessEmail(savedReservation);
-        } catch (Exception e) {
-            // 郵件發送失敗不影響預約流程，只記錄錯誤
-            System.err.println("發送預約成功通知郵件失敗：" + e.getMessage());
+        // 只有在需要時才發送預約成功通知郵件
+        if (sendEmail) {
+            try {
+                notificationService.sendReservationSuccessEmail(savedReservation);
+            } catch (Exception e) {
+                // 郵件發送失敗不影響預約流程，只記錄錯誤
+                System.err.println("發送預約成功通知郵件失敗：" + e.getMessage());
+            }
         }
         
         return savedReservation;
+    }
+
+    // 新增：查詢用戶預約統計資訊
+    public Map<String, Object> getUserReservationStats(Integer userId) {
+        List<ReservationEntity> userReservations = reservationRepository.findByUserId(userId);
+        
+        long pendingCount = userReservations.stream()
+            .filter(r -> ReservationEntity.STATUS_PENDING.equals(r.getStatus()))
+            .count();
+            
+        long completedCount = userReservations.stream()
+            .filter(r -> ReservationEntity.STATUS_COMPLETED.equals(r.getStatus()))
+            .count();
+            
+        long cancelledCount = userReservations.stream()
+            .filter(r -> ReservationEntity.STATUS_CANCELLED.equals(r.getStatus()))
+            .count();
+            
+        long totalActiveCount = pendingCount + completedCount;
+        boolean canReserve = totalActiveCount < 10;
+        
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("pendingCount", pendingCount);
+        stats.put("completedCount", completedCount);
+        stats.put("cancelledCount", cancelledCount);
+        stats.put("totalActiveCount", totalActiveCount);
+        stats.put("maxAllowed", 10);
+        stats.put("canReserve", canReserve);
+        stats.put("remainingSlots", Math.max(0, 10 - totalActiveCount));
+        
+        return stats;
     }
 
     // 新增：查詢特定用戶的預約歷史
@@ -240,6 +309,11 @@ public class ReservationService {
             dto.setIsbn(reservation.getBook().getIsbn());
             dto.setAuthor(reservation.getBook().getAuthor());
             dto.setPublisher(reservation.getBook().getPublisher());
+            
+            // 添加圖片網址
+            if (reservation.getBook().getBookDetail() != null) {
+                dto.setImgUrl(reservation.getBook().getBookDetail().getImgUrl());
+            }
             
             if (reservation.getBook().getCategory() != null) {
                 dto.setCategoryName(reservation.getBook().getCategory().getcName());

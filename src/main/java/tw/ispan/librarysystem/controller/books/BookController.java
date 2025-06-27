@@ -62,19 +62,20 @@ public class BookController {
     }
 }
 
-    // @GetMapping("/simple-search")
-    // public PageResponseDTO<BookSimpleDTO> simpleSearch(
-    //     @RequestParam String keyword,
-    //     @RequestParam(defaultValue = "0") int page,
-    //     @RequestParam(defaultValue = "10") int size,
-    //     @RequestParam(defaultValue = "title") String sortField,
-    //     @RequestParam(defaultValue = "asc") String sortDir
-    // ) {
-    //     Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-    //     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
-    //     Page<BookSimpleDTO> bookPage = bookService.simpleSearch(null,keyword, pageable);
-    //     return new PageResponseDTO<>(bookPage.getContent(), bookPage.getNumber(), bookPage.getSize(), bookPage.getTotalElements(), bookPage.getTotalPages(), bookPage.isLast(), bookPage.isFirst());
-    // }
+
+    @GetMapping("/simple-search")
+    public PageResponseDTO<BookSimpleDTO> simpleSearch(
+        @RequestParam String keyword,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "title") String sortField,
+        @RequestParam(defaultValue = "asc") String sortDir
+    ) {
+        Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+        Page<BookSimpleDTO> bookPage = bookService.simpleSearch(null,keyword, pageable);
+        return new PageResponseDTO<>(bookPage.getContent(), bookPage.getNumber(), bookPage.getSize(), bookPage.getTotalElements(), bookPage.getTotalPages(), bookPage.isLast(), bookPage.isFirst());
+    }
 
     @PostMapping("/advanced-search")
     public PageResponseDTO<BookDTO> advancedSearch(

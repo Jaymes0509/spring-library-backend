@@ -37,7 +37,7 @@ public class SeatReservationController {
     private SeatRepository seatRepo;
 
 
-
+    //查詢當日已被預約的座位(根據時間與時段找出預約座位標籤)
     @GetMapping("/occupied")
     public List<String> getReservedSeats(
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -51,18 +51,15 @@ public class SeatReservationController {
         System.out.println("📥 收到預約請求：" + request);
 
         try {
-            String result = seatReservationService.reserveSeat(request);
+            String result = seatReservationService.reserveSeat(request); //預約邏輯寫入 reservation 表
 
             Optional<Seat> optionalSeat = seatRepo.findBySeatLabel(request.getSeatLabel());
-            if (optionalSeat.isPresent()) {
-                Seat seat = optionalSeat.get();
-                seat.setStatus(Seat.Status.RESERVED); //  正確 enum 用法
-                seatRepo.save(seat);
-            } else {
+            if (optionalSeat.isEmpty()) {
                 return ResponseEntity.badRequest().body("❌ 座位不存在");
             }
 
-            return ResponseEntity.ok(result); //  最終只有這個 return
+            return ResponseEntity.ok(result); //  最終只有這個 return, 預約成功
+
         } catch (SeatAlreadyReservedException e) {
             // 該座位已被預約
             return ResponseEntity.status(HttpStatus.CONFLICT).body("⚠️ 該座位已被預約");
