@@ -19,6 +19,9 @@ public class ReservationHistoryDTO {
     private String isbn;
     private String publisher;
     
+    @JsonProperty("img_url")
+    private String imgUrl;
+    
     @JsonProperty("category_name")
     private String categoryName;
     
@@ -51,7 +54,7 @@ public class ReservationHistoryDTO {
     // 建構子
     public ReservationHistoryDTO(Integer reservationId, Integer userId, Integer bookId, 
                                 String title, String author, String isbn, String publisher,
-                                String categoryName, LocalDateTime reserveTime, 
+                                String imgUrl, String categoryName, LocalDateTime reserveTime, 
                                 LocalDateTime expiryDate, String status, 
                                 LocalDateTime createdAt, LocalDateTime updatedAt, String batchId,
                                 String pickupLocation, String pickupMethod) {
@@ -62,6 +65,7 @@ public class ReservationHistoryDTO {
         this.author = author;
         this.isbn = isbn;
         this.publisher = publisher;
+        this.imgUrl = imgUrl;
         this.categoryName = categoryName;
         this.reserveTime = reserveTime;
         this.expiryDate = expiryDate;
@@ -94,6 +98,9 @@ public class ReservationHistoryDTO {
 
     public String getPublisher() { return publisher; }
     public void setPublisher(String publisher) { this.publisher = publisher; }
+
+    public String getImgUrl() { return imgUrl; }
+    public void setImgUrl(String imgUrl) { this.imgUrl = imgUrl; }
 
     public String getCategoryName() { return categoryName; }
     public void setCategoryName(String categoryName) { this.categoryName = categoryName; }

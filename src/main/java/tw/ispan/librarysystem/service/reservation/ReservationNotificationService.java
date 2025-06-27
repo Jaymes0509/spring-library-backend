@@ -25,7 +25,7 @@ public class ReservationNotificationService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.US);
 
     /**
-     * 過濾字符串，只保留安全的 ASCII 字符
+     * 過濾字符串，保留中文、日文等字符，只過濾真正有問題的字符
      * @param input 輸入字符串
      * @return 過濾後的字符串
      */
@@ -34,9 +34,9 @@ public class ReservationNotificationService {
             return "Unknown";
         }
         
-        // 移除或替換可能導致問題的字符
-        return input.replaceAll("[^\\x20-\\x7E]", "") // 只保留可打印的 ASCII 字符
-                   .replaceAll("[\\r\\n\\t]", " ") // 替換換行符和製表符
+        // 只過濾掉控制字符和換行符，保留中文、日文等字符
+        return input.replaceAll("[\\x00-\\x1F\\x7F]", "") // 過濾控制字符
+                   .replaceAll("[\\r\\n\\t]", " ") // 替換換行符和製表符為空格
                    .trim();
     }
 
@@ -52,6 +52,16 @@ public class ReservationNotificationService {
             throw new RuntimeException("找不到會員資訊，無法發送通知郵件");
         }
 
+        // 添加調試日誌
+        if (reservation.getBook() != null) {
+            System.out.println("調試 - 書籍資訊：");
+            System.out.println("  標題: " + reservation.getBook().getTitle());
+            System.out.println("  作者: " + reservation.getBook().getAuthor());
+            System.out.println("  ISBN: " + reservation.getBook().getIsbn());
+        } else {
+            System.out.println("調試 - 書籍資訊為空");
+        }
+
         sendReservationSuccessEmail(member, List.of(reservation), null);
     }
 
@@ -63,6 +73,14 @@ public class ReservationNotificationService {
      */
     public void sendReservationSuccessEmail(Member member, List<ReservationEntity> reservations, String batchId) {
         try {
+            // 添加調試日誌
+            System.out.println("=== 開始發送郵件 ===");
+            System.out.println("會員ID: " + member.getId() + ", 會員姓名: " + member.getName() + ", 郵箱: " + member.getEmail());
+            System.out.println("預約數量: " + reservations.size());
+            System.out.println("批次ID: " + (batchId != null ? batchId : "無"));
+            System.out.println("預約ID列表: " + reservations.stream().map(r -> r.getReservationId()).collect(java.util.stream.Collectors.toList()));
+            System.out.println("發送時間: " + java.time.LocalDateTime.now());
+            
             SimpleMailMessage emailMessage = new SimpleMailMessage();
             emailMessage.setTo(member.getEmail());
             
@@ -79,6 +97,14 @@ public class ReservationNotificationService {
             emailMessage.setFrom("ispanlibrarysystem@gmail.com");
             
             mailSender.send(emailMessage);
+            
+            // 添加發送成功日誌
+            System.out.println("=== 郵件發送成功 ===");
+            System.out.println("收件人: " + member.getEmail());
+            System.out.println("主旨: " + emailMessage.getSubject());
+            System.out.println("預約數量: " + reservations.size());
+            System.out.println("========================\n");
+            
         } catch (Exception e) {
             System.err.println("發送預約成功通知郵件失敗：" + e.getMessage());
             e.printStackTrace();

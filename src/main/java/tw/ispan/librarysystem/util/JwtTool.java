@@ -39,6 +39,23 @@ public class JwtTool {
     }
 
     /**
+     * 產生包含 user_id 的 JWT Token
+     * 
+     * @param email 使用者 email
+     * @param userId 使用者 ID
+     * @return JWT token 字串
+     */
+    public static String createTokenWithUserId(String email, Long userId) {
+        return Jwts.builder()
+                .setSubject(email)
+                .claim("user_id", userId)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + EXP_TIME))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /**
      * 解析 JWT Token 並取得 email
      * 
      * @param token JWT token
@@ -53,6 +70,38 @@ public class JwtTool {
 
             Claims claims = parser.parseClaimsJws(token).getBody();
             return claims.getSubject();
+        } catch (ExpiredJwtException e) {
+            throw new RuntimeException("Token 已過期");
+        } catch (UnsupportedJwtException e) {
+            throw new RuntimeException("不支援的 JWT");
+        } catch (MalformedJwtException e) {
+            throw new RuntimeException("JWT 格式錯誤");
+        } catch (SignatureException e) {
+            throw new RuntimeException("JWT 簽名驗證失敗");
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("JWT 字串為空");
+        }
+    }
+
+    /**
+     * 解析 JWT Token 並取得 user_id
+     * 
+     * @param token JWT token
+     * @return 使用者 ID
+     * @throws RuntimeException 當 token 無效時拋出
+     */
+    public static Long parseUserIdFromToken(String token) {
+        try {
+            JwtParser parser = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build();
+
+            Claims claims = parser.parseClaimsJws(token).getBody();
+            Object userIdObj = claims.get("user_id");
+            if (userIdObj == null) {
+                throw new RuntimeException("Token 中沒有 user_id");
+            }
+            return Long.valueOf(userIdObj.toString());
         } catch (ExpiredJwtException e) {
             throw new RuntimeException("Token 已過期");
         } catch (UnsupportedJwtException e) {
