@@ -10,6 +10,7 @@ import tw.ispan.librarysystem.entity.seat.Seat;
 import tw.ispan.librarysystem.enums.TimeSlot;
 import tw.ispan.librarysystem.repository.seat.SeatRepository;
 import tw.ispan.librarysystem.repository.seat.SeatReservationRepository;
+import tw.ispan.librarysystem.security.CheckJwt;
 import tw.ispan.librarysystem.service.seat.SeatReservationService;
 import tw.ispan.librarysystem.exception.SeatAlreadyReservedException;
 import tw.ispan.librarysystem.exception.UserAlreadyReservedException;
@@ -47,6 +48,7 @@ public class SeatReservationController {
     }
 
     @PostMapping("/book")
+    @CheckJwt
     public ResponseEntity<String> bookSeat(@RequestBody SeatReservationRequest request) {
         System.out.println("📥 收到預約請求：" + request);
 
@@ -81,6 +83,7 @@ public class SeatReservationController {
     }
 
     @GetMapping("/check")
+    @CheckJwt
     public ResponseEntity<Boolean> checkUserReserved(
             @RequestParam Integer userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -95,6 +98,7 @@ public class SeatReservationController {
 
 
     @PutMapping("/cancel")
+    @CheckJwt
     public ResponseEntity<String> cancelByUser(
             @RequestParam Integer userId,
             @RequestParam String seatLabel,
@@ -117,9 +121,9 @@ public class SeatReservationController {
     }
 
     // 查詢有未來預約的座位
-    @GetMapping("/reservations/upcoming")
+    @GetMapping("/upcoming")
     public List<String> getUpcomingSeatLabels() {
-        return reservationRepo.findUpcomingSeatLabels();
+        return reservationRepo.findUpcomingSeatLabels(SeatReservation.Status.RESERVED);
     }
 }
 
