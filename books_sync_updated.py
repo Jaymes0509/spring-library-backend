@@ -17,7 +17,10 @@ class BookSync:
         )
 
         # 連接到本機的 Elasticsearch 節點
-        self.es = Elasticsearch("http://localhost:9200")
+        self.es = Elasticsearch(
+            "http://localhost:9200",
+            basic_auth=("elastic", "elastic")  # 請填你的 elastic 使用者密碼
+        )
         print("✅ 已連接到 Elasticsearch")
 
     def create_index(self):
