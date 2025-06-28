@@ -21,6 +21,7 @@ import jakarta.persistence.criteria.Root;
 import tw.ispan.librarysystem.dto.SearchCondition;
 import tw.ispan.librarysystem.dto.BookSimpleDTO;
 import tw.ispan.librarysystem.dto.BookDTO;
+import tw.ispan.librarysystem.dto.PageResponseDTO;
 import tw.ispan.librarysystem.entity.books.BookDetailEntity;
 import tw.ispan.librarysystem.entity.books.BookEntity;
 import tw.ispan.librarysystem.entity.books.CategoryEntity;
@@ -103,14 +104,22 @@ public class BookService {
     }
 
     /**
-     * 進階搜尋：回傳 Page<BookDTO>
+     * 進階搜尋：回傳 PageResponseDTO<BookDTO>
      */
-    public Page<BookDTO> advancedSearch(List<SearchCondition> conditions, Pageable pageable) {
+    public PageResponseDTO<BookDTO> advancedSearch(List<SearchCondition> conditions, Pageable pageable) {
         Specification<BookEntity> spec = buildSpecification(conditions);
         Page<BookEntity> entityPage = bookRepository.findAll(spec, pageable);
         // 用 Mapper 轉換
         List<BookDTO> dtoList = entityPage.getContent().stream().map(bookMapper::toDTO).toList();
-        return new org.springframework.data.domain.PageImpl<>(dtoList, pageable, entityPage.getTotalElements());
+        return new PageResponseDTO<>(
+            dtoList, 
+            entityPage.getNumber(), 
+            entityPage.getSize(), 
+            entityPage.getTotalElements(), 
+            entityPage.getTotalPages(), 
+            entityPage.isLast(), 
+            entityPage.isFirst()
+        );
     }
 
     private Specification<BookEntity> buildSpecification(List<SearchCondition> conditions) {

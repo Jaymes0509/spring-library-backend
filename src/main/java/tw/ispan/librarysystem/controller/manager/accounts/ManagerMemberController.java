@@ -10,6 +10,7 @@ import tw.ispan.librarysystem.dto.manager.accounts.UpdateMemberDto;
 import tw.ispan.librarysystem.service.manager.accounts.ManagerMemberService;
 import tw.ispan.librarysystem.entity.member.Member;
 import tw.ispan.librarysystem.repository.member.MemberRepository;
+import tw.ispan.librarysystem.dto.PageResponseDTO;
 
 @RestController
 @RequestMapping("/api/manager/accounts")
@@ -28,7 +29,7 @@ public class ManagerMemberController {
     private PasswordEncoder passwordEncoder;
 
     @GetMapping("/all")
-    public Page<ManagerMemberDTO> getMembersPage(
+    public PageResponseDTO<ManagerMemberDTO> getMembersPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return managerMemberService.getMembersPage(PageRequest.of(page, size));
