@@ -20,15 +20,15 @@ public class BookRecommendationController {
     private final BookRecommendationService service;
 
     @PostMapping
-//    @CheckJwt
+    @CheckJwt
     public ResponseEntity<?> submit(
             @RequestBody @Valid BookRecommendationDto dto,
             HttpServletRequest request) {
 
-//        Member member = (Member) request.getAttribute("user"); // 從 JwtAspect 放進來的會員
+        Member member = (Member) request.getAttribute("user"); // 從 JwtAspect 放進來的會員
         // ✅ 測試用：手動建立一個 member
-        Member member = new Member();
-        member.setUserId(1L); // 用 1 號會員進行測試
+//        Member member = new Member();
+//        member.setUserId(1L); // 用 1 號會員進行測試
 
         try {
             BookRecommendation saved = service.submitRecommendation(dto, member); // 傳入後端儲存
@@ -40,13 +40,13 @@ public class BookRecommendationController {
 
 
     @GetMapping("/count")
-//    @CheckJwt
+    @CheckJwt
     public ResponseEntity<?> getCount(HttpServletRequest request) {
-        //Member member = (Member) request.getAttribute("user"); //    取得登入會員
+        Member member = (Member) request.getAttribute("user"); //    取得登入會員
 
         // ↓↓↓ 測試用會員資料（之後記得移除）
-        Member member = new Member();
-        member.setUserId(1L);
+//        Member member = new Member();
+//        member.setUserId(1L);
         return ResponseEntity.ok(service.getUserCount(member));
     }
 
