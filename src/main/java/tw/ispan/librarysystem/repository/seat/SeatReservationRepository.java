@@ -48,6 +48,12 @@ public interface SeatReservationRepository extends JpaRepository<SeatReservation
             SeatReservation.Status status
     );
 
+    // 查詢使用者未來一筆預約（給「我的座位預約」用）
+    Optional<SeatReservation> findFirstByUserIdAndReservationDateAfterAndStatusOrderByReservationDateAsc(
+            Integer userId, LocalDate today, SeatReservation.Status status
+    );
+
+
 
     // 可以在排程中找出所有過期但還是 RESERVED 的預約，進行取消。
     List<SeatReservation> findByReservationDateBeforeAndStatus(LocalDate date, SeatReservation.Status status);
