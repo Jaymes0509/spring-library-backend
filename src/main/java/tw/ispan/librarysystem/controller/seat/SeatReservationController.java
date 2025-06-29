@@ -5,6 +5,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tw.ispan.librarysystem.dto.seat.SeatReservationDto;
 import tw.ispan.librarysystem.dto.seat.SeatReservationRequest;
 import tw.ispan.librarysystem.entity.seat.Seat;
 import tw.ispan.librarysystem.enums.TimeSlot;
@@ -122,9 +123,25 @@ public class SeatReservationController {
 
     // 查詢有未來預約的座位
     @GetMapping("/upcoming")
-    public List<String> getUpcomingSeatLabels() {
-        return reservationRepo.findUpcomingSeatLabels(SeatReservation.Status.RESERVED);
+    @CheckJwt
+    public ResponseEntity<?> getUpcomingReservation(@RequestParam Integer userId) {
+        Optional<SeatReservation> optional = reservationRepo
+                .findFirstByUserIdAndReservationDateAfterAndStatusOrderByReservationDateAsc(
+                        userId, LocalDate.now(), SeatReservation.Status.RESERVED
+                );
+
+        if (optional.isPresent()) {
+            SeatReservation res = optional.get();
+            SeatReservationDto dto = new SeatReservationDto();
+            dto.setSeatLabel(res.getSeat().getSeatLabel());
+            dto.setReservationDate(res.getReservationDate());
+            dto.setTimeSlot(res.getTimeSlot().toString());
+            return ResponseEntity.ok(dto);
+        } else {
+            return ResponseEntity.noContent().build();
+        }
     }
+
 }
 
 
