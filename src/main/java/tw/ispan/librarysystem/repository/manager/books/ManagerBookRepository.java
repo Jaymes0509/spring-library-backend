@@ -50,5 +50,5 @@ public interface ManagerBookRepository
             @Param("yearTo") Integer yearTo,
             @Param("language") String language,
             Pageable pageable);
-
+  
 }
