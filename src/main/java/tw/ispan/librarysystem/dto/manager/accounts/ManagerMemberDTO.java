@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class ManagerMemberDTO {
-    private Integer id;
+    private Long id;
     private String name;
     private String gender;
     private String idNumber;
