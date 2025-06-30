@@ -127,6 +127,12 @@ public class SeatReservationController {
 
     // 查詢有未來預約的座位
     @GetMapping("/upcoming")
+    public List<String> getUpcomingSeatLabels() {
+        return reservationRepo.findUpcomingSeatLabels(SeatReservation.Status.RESERVED);
+    }
+
+    // 查詢有未來預約的座位
+    @GetMapping("/next")
     @CheckJwt
     public ResponseEntity<?> getUpcomingReservation(@RequestParam Integer userId) {
         Optional<SeatReservation> optional = reservationRepo

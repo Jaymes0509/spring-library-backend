@@ -19,5 +19,7 @@ public interface BookRecommendationService {
 
     Map<String, Integer> getUserCount(Member member);
 
+    List<BookRecommendation> getUserRecommendations(Member member);
+
 
 }

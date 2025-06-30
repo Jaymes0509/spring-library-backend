@@ -53,4 +53,10 @@ public class BookRecommendationServiceImpl implements BookRecommendationService 
         map.put("remaining", remaining); // 前端使用這個 key
         return map;
     }
+
+    @Override
+    public List<BookRecommendation> getUserRecommendations(Member member) {
+        return repository.findByUserIdOrderByCreatedAtDesc(member.getUserId());
+    }
+
 }
