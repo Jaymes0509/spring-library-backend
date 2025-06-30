@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import tw.ispan.librarysystem.dto.manager.accounts.ManagerMemberDTO;
 import tw.ispan.librarysystem.dto.manager.accounts.UpdateMemberDto;
+import tw.ispan.librarysystem.dto.PageResponseDTO;
 import tw.ispan.librarysystem.entity.member.Member;
 import tw.ispan.librarysystem.repository.member.MemberRepository;
 
@@ -28,9 +29,18 @@ public class ManagerMemberService {
         return members.stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-    public Page<ManagerMemberDTO> getMembersPage(Pageable pageable) {
+    public PageResponseDTO<ManagerMemberDTO> getMembersPage(Pageable pageable) {
         Page<Member> page = memberRepository.findAll(pageable);
-        return page.map(this::toDTO);
+        List<ManagerMemberDTO> dtoList = page.getContent().stream().map(this::toDTO).collect(Collectors.toList());
+        return new PageResponseDTO<>(
+            dtoList,
+            page.getNumber(),
+            page.getSize(),
+            page.getTotalElements(),
+            page.getTotalPages(),
+            page.isLast(),
+            page.isFirst()
+        );
     }
 
     public ManagerMemberDTO updateMember(Long id, UpdateMemberDto dto) {
