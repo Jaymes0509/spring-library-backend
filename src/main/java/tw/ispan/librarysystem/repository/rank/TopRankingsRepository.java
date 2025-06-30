@@ -80,26 +80,26 @@ public interface TopRankingsRepository extends JpaRepository<BookEntity, Integer
 
     // 🔍 預約排行榜：詳細搜尋（有條件）
     @Query("""
-        SELECT new tw.ispan.librarysystem.dto.rank.TopRankingsBookDto(
-            b.bookId, b.title, b.author,
-            bd.imgUrl,
-            c.cName,
-            null,
-            COUNT(r.reservationId),
-            bd.summary
-        )
-        FROM BookEntity b
-        JOIN b.category c
-        LEFT JOIN b.bookDetail bd
-        LEFT JOIN ReservationEntity r ON r.book.bookId = b.bookId AND r.reserveStatus = 1
-        WHERE (:categoryId IS NULL OR c.cId = :categoryId)
-          AND (:year IS NULL OR FUNCTION('YEAR', r.createdAt) = :year)
-          AND (:month IS NULL OR FUNCTION('MONTH', r.createdAt) = :month)
-          AND (:keyword IS NULL OR b.title LIKE CONCAT('%', :keyword, '%'))
-        GROUP BY b.bookId, b.title, b.author, c.cName, bd.imgUrl, bd.summary
-        HAVING COUNT(r.reservationId) > 0
-        ORDER BY COUNT(r.reservationId) DESC, b.bookId ASC
-    """)
+    SELECT new tw.ispan.librarysystem.dto.rank.TopRankingsBookDto(
+        b.bookId, b.title, b.author,
+        bd.imgUrl,
+        c.cName,
+        null,
+        COUNT(r.reservationId),
+        bd.summary
+    )
+    FROM BookEntity b
+    JOIN b.category c
+    LEFT JOIN b.bookDetail bd
+    LEFT JOIN ReservationEntity r ON r.book.bookId = b.bookId AND r.reserveStatus = 1
+    WHERE (:categoryId IS NULL OR c.cId = :categoryId)
+      AND (:year IS NULL OR FUNCTION('YEAR', r.reserveTime) = :year)
+      AND (:month IS NULL OR FUNCTION('MONTH', r.reserveTime) = :month)
+      AND (:keyword IS NULL OR b.title LIKE CONCAT('%', :keyword, '%'))
+    GROUP BY b.bookId, b.title, b.author, c.cName, bd.imgUrl, bd.summary
+    HAVING COUNT(r.reservationId) > 0
+    ORDER BY COUNT(r.reservationId) DESC, b.bookId ASC
+""")
     Page<TopRankingsBookDto> findTopRankingsByReservationCondition(
             @Param("categoryId") Integer categoryId,
             @Param("year") Integer year,

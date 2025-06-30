@@ -27,6 +27,9 @@ public class SeatReservationServiceImpl implements SeatReservationService {
     private final SeatReservationRepository reservationRepo;
     private final SeatRepository seatRepo;
 
+    // where reservation_date = ?
+    //  and time_slot = ?
+    //  and status = 'RESERVED'
     @Override
     public List<String> getReservedSeatLabels(LocalDate date, TimeSlot timeSlot) {
         return reservationRepo
