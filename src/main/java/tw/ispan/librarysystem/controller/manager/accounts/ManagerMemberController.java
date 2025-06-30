@@ -44,7 +44,7 @@ public class ManagerMemberController {
     public ManagerMemberDTO updateMember(
             @PathVariable Long id,
             @RequestBody UpdateMemberDto dto) {
-        Member entity = memberRepository.findById(id).orElseThrow();
+        Member entity = memberRepository.findById(Math.toIntExact(id)).orElseThrow();
         if (dto.getEmail() != null)
             entity.setEmail(dto.getEmail());
         if (dto.getPhone() != null)

@@ -93,8 +93,8 @@ public interface TopRankingsRepository extends JpaRepository<BookEntity, Integer
     LEFT JOIN b.bookDetail bd
     LEFT JOIN ReservationEntity r ON r.book.bookId = b.bookId AND r.reserveStatus = 1
     WHERE (:categoryId IS NULL OR c.cId = :categoryId)
-      AND (:year IS NULL OR FUNCTION('YEAR', r.reserveTime) = :year)
-      AND (:month IS NULL OR FUNCTION('MONTH', r.reserveTime) = :month)
+      AND (:year IS NULL OR FUNCTION('YEAR', r.createdAt) = :year)
+      AND (:month IS NULL OR FUNCTION('MONTH', r.createdAt) = :month)
       AND (:keyword IS NULL OR b.title LIKE CONCAT('%', :keyword, '%'))
     GROUP BY b.bookId, b.title, b.author, c.cName, bd.imgUrl, bd.summary
     HAVING COUNT(r.reservationId) > 0
