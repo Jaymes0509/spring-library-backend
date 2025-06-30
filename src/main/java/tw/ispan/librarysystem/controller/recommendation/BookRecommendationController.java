@@ -8,10 +8,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import tw.ispan.librarysystem.dto.recommendation.BookRecommendationDto;
+import tw.ispan.librarysystem.dto.recommendation.SimpleRecommendationDto;
 import tw.ispan.librarysystem.entity.member.Member;
 import tw.ispan.librarysystem.entity.recommendation.BookRecommendation;
 import tw.ispan.librarysystem.security.CheckJwt;
 import tw.ispan.librarysystem.service.recommendation.BookRecommendationService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/recommendations")
@@ -60,5 +63,25 @@ public class BookRecommendationController {
         return ResponseEntity.ok("狀態更新成功");
     }
 
+    // 「查看自己推薦清單」的功能 API，讓使用者可以查自己曾推薦過哪些書。
+    @GetMapping("/my-list")
+    @CheckJwt
+    public ResponseEntity<?> getMyRecommendations(HttpServletRequest request) {
+        Member member = (Member) request.getAttribute("user"); // 透過 JWT 驗證後的使用者
+        List<SimpleRecommendationDto> result = service.getUserRecommendations(member)
+                .stream()
+                .map(r -> new SimpleRecommendationDto(
+                        r.getTitle(),
+                        r.getIsbn(),
+                        r.getReason(),
+                        r.getStatus().name(), // 或轉中文
+                        r.getCreatedAt()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(result);
+    }
 }
+
+
 
