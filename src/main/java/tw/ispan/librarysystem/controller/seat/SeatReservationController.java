@@ -57,7 +57,11 @@ public class SeatReservationController {
             String result = seatReservationService.reserveSeat(request); //預約邏輯寫入 reservation 表
 
             Optional<Seat> optionalSeat = seatRepo.findBySeatLabel(request.getSeatLabel());
-            if (optionalSeat.isEmpty()) {
+            if (optionalSeat.isPresent()) {
+                Seat seat = optionalSeat.get();
+                seat.setStatus(Seat.Status.AVAILABLE); // 修正：使用正確的 enum 值
+                seatRepo.save(seat);
+            } else {
                 return ResponseEntity.badRequest().body("❌ 座位不存在");
             }
 
