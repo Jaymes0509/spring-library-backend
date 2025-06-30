@@ -41,9 +41,9 @@ public class LikeBookController {
     @GetMapping("/{commentId}/liked")
     public ResponseEntity<Boolean> hasUserLiked(
             @PathVariable Integer commentId,
-            @RequestParam("userId") Integer memberId
+            @RequestParam("userId") Integer userId
     ) {
-        boolean liked = likeBookService.hasUserLiked(commentId, memberId);
+        boolean liked = likeBookService.hasUserLiked(commentId, userId);
         return ResponseEntity.ok(liked);
     }
 
