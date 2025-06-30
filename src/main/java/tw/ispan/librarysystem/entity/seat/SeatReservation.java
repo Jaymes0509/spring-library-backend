@@ -34,6 +34,9 @@ public class SeatReservation {
     @Column(name = "time_slot", nullable = false)
     private TimeSlot timeSlot;
 
+    public enum Status {
+        RESERVED, CANCELLED
+    }
 
     @Enumerated(EnumType.STRING)
     private Status status;  // RESERVED or CANCELLED
@@ -44,9 +47,7 @@ public class SeatReservation {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    public enum Status {
-        RESERVED, CANCELLED
-    }
+
 
 }
 

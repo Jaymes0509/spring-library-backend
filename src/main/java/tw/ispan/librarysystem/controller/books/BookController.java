@@ -87,8 +87,7 @@ public class BookController {
     ) {
         Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
-        Page<BookDTO> bookPage = bookService.advancedSearch(conditions, pageable);
-        return new PageResponseDTO<>(bookPage.getContent(), bookPage.getNumber(), bookPage.getSize(), bookPage.getTotalElements(), bookPage.getTotalPages(), bookPage.isLast(), bookPage.isFirst());
+        return bookService.advancedSearch(conditions, pageable);
     }
 
 }

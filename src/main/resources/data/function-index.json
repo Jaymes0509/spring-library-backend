@@ -1,0 +1,140 @@
+[
+  {
+    "title": "本館簡介",
+    "description": "了解圖書館的設立宗旨與發展沿革",
+    "url": "/introduction/about",
+    "category": "認識本館"
+  },
+  {
+    "title": "服務對象",
+    "description": "說明本館對各類讀者開放的服務範圍",
+    "url": "/introduction/audience",
+    "category": "認識本館"
+  },
+  {
+    "title": "空間設施",
+    "description": "介紹圖書館內部的空間與設施配置",
+    "url": "#",
+    "category": "認識本館"
+  },
+  {
+    "title": "開放時間",
+    "description": "列出圖書館各區開放時間",
+    "url": "/introduction/opening-hours",
+    "category": "認識本館"
+  },
+  {
+    "title": "本館位置",
+    "description": "查看圖書館地址與交通資訊",
+    "url": "/introduction/location",
+    "category": "認識本館"
+  },
+  {
+    "title": "館藏查詢",
+    "description": "搜尋書籍、期刊與電子資源",
+    "url": "/catalogue-search",
+    "category": "館藏查詢"
+  },
+  {
+    "title": "預約清單",
+    "description": "查看目前預約中書籍清單",
+    "url": "/reserve/reservation-record",
+    "category": "館藏預約"
+  },
+  {
+    "title": "預約紀錄",
+    "description": "查看過往預約書籍的歷史紀錄",
+    "url": "/reserve/reservation-history",
+    "category": "館藏預約"
+  },
+  {
+    "title": "借書查詢",
+    "description": "查詢目前借閱書籍的資訊",
+    "url": "/borrow/borrow-search",
+    "category": "讀者服務"
+  },
+  {
+    "title": "我要借書",
+    "description": "進行書籍借閱登記申請",
+    "url": "/borrow/borrow-record",
+    "category": "讀者服務"
+  },
+  {
+    "title": "我要續借",
+    "description": "申請書籍續借延長歸還期限",
+    "url": "/borrow/borrow-continue",
+    "category": "讀者服務"
+  },
+  {
+    "title": "借閱證申請",
+    "description": "辦理借閱證以享有借書與自習服務",
+    "url": "/application/card-application",
+    "category": "申請服務"
+  },
+  {
+    "title": "自習座位預約",
+    "description": "線上預約圖書館自習區座位",
+    "url": "/application/seat-reservation",
+    "category": "申請服務"
+  },
+  {
+    "title": "書籍薦購",
+    "description": "推薦希望圖書館購買的新書",
+    "url": "/application/book-recommendation",
+    "category": "申請服務"
+  },
+  {
+    "title": "借閱排行榜",
+    "description": "查看最熱門借閱書籍排名",
+    "url": "/ranking/borrowing-rankings",
+    "category": "排行榜 & 評論"
+  },
+  {
+    "title": "讀者書評",
+    "description": "瀏覽讀者針對書籍的評論內容",
+    "url": "/ranking/book-review",
+    "category": "排行榜 & 評論"
+  },
+  {
+    "title": "意見信箱",
+    "description": "填寫意見或建議以供圖書館回覆",
+    "url": "/feedback",
+    "category": "讀者服務"
+  },
+  {
+    "title": "管理者專區",
+    "description": "圖書館管理人員專用的操作後台",
+    "url": "/manager/manager",
+    "category": "管理者專區"
+  },
+  {
+    "title": "書籍管理",
+    "description": "新增、修改與刪除書籍資料",
+    "url": "/manager/books",
+    "category": "管理者專區"
+  },
+  {
+    "title": "帳號管理",
+    "description": "管理前台使用者與後台工作人員帳號",
+    "url": "/manager/accounts",
+    "category": "管理者專區"
+  },
+  {
+    "title": "違規紀錄",
+    "description": "處理並檢視讀者違規情形紀錄",
+    "url": "/manager/violations",
+    "category": "管理者專區"
+  },
+  {
+    "title": "意見回覆",
+    "description": "回覆讀者的建議與意見",
+    "url": "/manager/feedback",
+    "category": "管理者專區"
+  },
+  {
+    "title": "座位管理",
+    "description": "設定圖書館各座位狀態",
+    "url": "/manager/seat-management",
+    "category": "管理者專區"
+  }
+]

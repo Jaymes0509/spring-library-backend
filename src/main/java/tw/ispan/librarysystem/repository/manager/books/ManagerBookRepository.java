@@ -31,26 +31,24 @@ public interface ManagerBookRepository
     List<BookEntity> findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(String title, String author);
 
     // 進階多條件搜尋，支援出版年區間與多選語言
-    @Query("""
-    SELECT b FROM BookEntity b
-    WHERE (:title IS NULL OR b.title LIKE %:title%)
-      AND (:author IS NULL OR b.author LIKE %:author%)
-      AND (:publisher IS NULL OR b.publisher LIKE %:publisher%)
-      AND (:isbn IS NULL OR b.isbn LIKE %:isbn%)
-      AND (:classification IS NULL OR b.classification = :classification)
-      AND (:yearFrom IS NULL OR CAST(b.publishdate AS integer) >= :yearFrom)
-      AND (:yearTo IS NULL OR CAST(b.publishdate AS integer) <= :yearTo)
-      AND (:language IS NULL OR b.language = :language)
-""")
-    Page<BookEntity> searchBooks(@Param("title") String title,
-                                 @Param("author") String author,
-                                 @Param("publisher") String publisher,
-                                 @Param("isbn") String isbn,
-                                 @Param("classification") String classification,
-                                 @Param("yearFrom") Integer yearFrom,
-                                 @Param("yearTo") Integer yearTo,
-                                 @Param("language") String language,
-                                 Pageable pageable);
-
-
+    @Query(value = "SELECT b FROM BookEntity b WHERE " +
+            "(:title           IS NULL OR LOWER(b.title)       LIKE LOWER(CONCAT('%', :title, '%'))) AND " +
+            "(:author          IS NULL OR LOWER(b.author)      LIKE LOWER(CONCAT('%', :author, '%'))) AND " +
+            "(:publisher       IS NULL OR LOWER(b.publisher)   LIKE LOWER(CONCAT('%', :publisher, '%'))) AND " +
+            "(:isbn            IS NULL OR b.isbn               LIKE CONCAT('%', :isbn, '%')) AND " +
+            "(:classification  IS NULL OR b.classification     = :classification) AND " +
+            "(:yearFrom       IS NULL OR b.publishdate >= :yearFrom) AND " +
+            "(:yearTo         IS NULL OR b.publishdate <= :yearTo) AND " +
+            "(:language        IS NULL OR b.language          = :language)")
+    Page<BookEntity> searchBooks(
+            @Param("title") String title,
+            @Param("author") String author,
+            @Param("publisher") String publisher,
+            @Param("isbn") String isbn,
+            @Param("classification") String classification,
+            @Param("yearFrom") Integer yearFrom,
+            @Param("yearTo") Integer yearTo,
+            @Param("language") String language,
+            Pageable pageable);
+  
 }
