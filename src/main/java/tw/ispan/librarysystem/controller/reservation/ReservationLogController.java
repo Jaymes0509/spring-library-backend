@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tw.ispan.librarysystem.service.reservation.ReservationLogService;
@@ -13,6 +14,8 @@ import tw.ispan.librarysystem.dto.reservation.ReservationLogDTO;
 import tw.ispan.librarysystem.dto.reservation.ReservationLogBatchDeleteRequest;
 import tw.ispan.librarysystem.security.CheckJwt;
 import tw.ispan.librarysystem.util.JwtTool;
+import tw.ispan.librarysystem.service.member.MemberService;
+import tw.ispan.librarysystem.entity.member.Member;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +36,9 @@ public class ReservationLogController {
 
     @Autowired
     private BookRepository bookRepository;
+    
+    @Autowired
+    private MemberService memberService;
 
     // 從 JWT token 獲取用戶 ID 的輔助方法
     private Integer getUserIdFromToken(String authHeader) {
@@ -54,12 +60,26 @@ public class ReservationLogController {
         try {
             logger.info("收到預約清單請求: {}", request);
             
-            // 從 JWT token 獲取用戶 ID
-            Integer userId = getUserIdFromToken(authHeader);
+
+            // 從JWT token中獲取使用者email
+            String token = authHeader.replace("Bearer ", "");
+            String email = JwtTool.parseToken(token);
+            
+            // 根據email獲取會員資訊
+            Member member = memberService.getMemberByEmail(email);
+            if (member == null) {
+                logger.error("找不到會員資訊: email={}", email);
+                response.put("success", false);
+                response.put("message", "找不到會員資訊");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            Long userId = member.getId().longValue();
+            logger.info("從JWT token解析用戶ID: {}", userId);
             
             // 檢查必要欄位
-            if (!request.containsKey("book_id") || 
-                !request.containsKey("action") || !request.containsKey("status")) {
+            if (!request.containsKey("book_id") || !request.containsKey("action") || !request.containsKey("status")) {
+
                 throw new IllegalArgumentException("缺少必要欄位");
             }
 
@@ -107,39 +127,55 @@ public class ReservationLogController {
     @CheckJwt
     public ResponseEntity<List<ReservationLogDTO>> getLogsByUserId(@RequestHeader("Authorization") String authHeader) {
         try {
-            Integer userId = getUserIdFromToken(authHeader);
+
+            // 從JWT token中獲取使用者email
+            String token = authHeader.replace("Bearer ", "");
+            String email = JwtTool.parseToken(token);
+            
+            // 根據email獲取會員資訊
+            Member member = memberService.getMemberByEmail(email);
+            if (member == null) {
+                logger.error("找不到會員資訊: email={}", email);
+                return ResponseEntity.badRequest().build();
+            }
+            
+            Long userId = member.getId().longValue();
+            logger.info("從JWT token解析用戶ID: {}", userId);
+
             
             // 查詢該 userId 的所有 reservation_logs
             List<ReservationLogEntity> logs = reservationLogService.getLogsByUserId(userId);
             List<ReservationLogDTO> result = logs.stream().map(log -> {
                 ReservationLogDTO dto = new ReservationLogDTO();
                 dto.setLogId(log.getId());
-                dto.setUserId(log.getUserId().longValue());
+
+                dto.setUserId(log.getUserId());
+
                 dto.setBookId(log.getBookId());
                 dto.setAction(log.getAction());
                 dto.setStatus(log.getStatus());
                 dto.setMessage(log.getMessage());
                 dto.setCreatedAt(log.getCreatedAt());
                 dto.setReserveTime(log.getReserveTime());
-                // 查書名、作者、ISBN、圖片網址
+
+                // 查書名、作者
+
                 BookEntity book = bookRepository.findById(log.getBookId().intValue()).orElse(null);
                 if (book != null) {
                     logger.info("logId={}, bookId={}, isbn={}", log.getId(), book.getBookId(), book.getIsbn());
                     dto.setTitle(book.getTitle());
                     dto.setAuthor(book.getAuthor());
                     dto.setIsbn(book.getIsbn());
-                    
-                    // 添加圖片網址
-                    if (book.getBookDetail() != null) {
-                        dto.setImgUrl(book.getBookDetail().getImgUrl());
-                    }
+
                 }
                 return dto;
             }).collect(Collectors.toList());
             
             return ResponseEntity.ok(result);
+           
         } catch (Exception e) {
-            logger.error("查詢預約清單失敗：" + e.getMessage());
+            logger.error("查詢預約清單時發生錯誤", e);
+
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -158,10 +194,24 @@ public class ReservationLogController {
         try {
             logger.info("收到移除預約清單請求: logId={}", logId);
             
-            // 從 JWT token 獲取用戶 ID
-            Integer userId = getUserIdFromToken(authHeader);
+
+            // 從JWT token中獲取使用者email
+            String token = authHeader.replace("Bearer ", "");
+            String email = JwtTool.parseToken(token);
             
-            // 檢查預約清單是否屬於當前用戶
+            // 根據email獲取會員資訊
+            Member member = memberService.getMemberByEmail(email);
+            if (member == null) {
+                logger.error("找不到會員資訊: email={}", email);
+                response.put("success", false);
+                response.put("message", "找不到會員資訊");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            Long userId = member.getId().longValue();
+            
+            // 檢查預約記錄是否存在且屬於當前用戶
+
             ReservationLogEntity log = reservationLogService.getLogById(logId).orElse(null);
             if (log == null) {
                 response.put("success", false);
@@ -172,9 +222,11 @@ public class ReservationLogController {
             
             if (!log.getUserId().equals(userId)) {
                 response.put("success", false);
-                response.put("message", "無權限移除此預約清單");
-                logger.warn("無權限移除預約清單: logId={}, userId={}, tokenUserId={}", logId, log.getUserId(), userId);
-                return ResponseEntity.status(403).body(response);
+
+                response.put("message", "無權限刪除此預約清單");
+                logger.warn("用戶嘗試刪除不屬於自己的預約清單: userId={}, logUserId={}, logId={}", userId, log.getUserId(), logId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+
             }
             
             boolean deleted = reservationLogService.deleteLogById(logId);
@@ -221,13 +273,37 @@ public class ReservationLogController {
                 return ResponseEntity.badRequest().body(response);
             }
             
-            // 檢查所有預約清單是否屬於當前用戶
+
+            // 從JWT token中獲取使用者email
+            String token = authHeader.replace("Bearer ", "");
+            String email = JwtTool.parseToken(token);
+            
+            // 根據email獲取會員資訊
+            Member member = memberService.getMemberByEmail(email);
+            if (member == null) {
+                logger.error("找不到會員資訊: email={}", email);
+                response.put("success", false);
+                response.put("message", "找不到會員資訊");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            Long userId = member.getId().longValue();
+            
+            // 檢查所有要刪除的記錄是否都屬於當前用戶
             for (Long logId : request.getLogIds()) {
                 ReservationLogEntity log = reservationLogService.getLogById(logId).orElse(null);
-                if (log != null && !log.getUserId().equals(userId)) {
+                if (log == null) {
                     response.put("success", false);
-                    response.put("message", "無權限移除預約清單 ID: " + logId);
-                    return ResponseEntity.status(403).body(response);
+                    response.put("message", "找不到指定的預約清單: " + logId);
+                    return ResponseEntity.notFound().build();
+                }
+                
+                if (!log.getUserId().equals(userId)) {
+                    response.put("success", false);
+                    response.put("message", "無權限刪除預約清單: " + logId);
+                    logger.warn("用戶嘗試刪除不屬於自己的預約清單: userId={}, logUserId={}, logId={}", userId, log.getUserId(), logId);
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+
                 }
             }
             
