@@ -5,17 +5,24 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tw.ispan.librarysystem.dto.seat.SeatReservationDto;
 import tw.ispan.librarysystem.dto.seat.SeatReservationRequest;
+import tw.ispan.librarysystem.entity.seat.Seat;
 import tw.ispan.librarysystem.enums.TimeSlot;
+import tw.ispan.librarysystem.repository.seat.SeatRepository;
 import tw.ispan.librarysystem.repository.seat.SeatReservationRepository;
+import tw.ispan.librarysystem.security.CheckJwt;
 import tw.ispan.librarysystem.service.seat.SeatReservationService;
 import tw.ispan.librarysystem.exception.SeatAlreadyReservedException;
 import tw.ispan.librarysystem.exception.UserAlreadyReservedException;
 import tw.ispan.librarysystem.entity.seat.SeatReservation;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/seats/reservations")
@@ -28,7 +35,11 @@ public class SeatReservationController {
     @Autowired
     private SeatReservationRepository reservationRepo;
 
+    @Autowired
+    private SeatRepository seatRepo;
 
+
+    //查詢當日已被預約的座位(根據時間與時段找出預約座位標籤)
     @GetMapping("/occupied")
     public List<String> getReservedSeats(
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -38,12 +49,23 @@ public class SeatReservationController {
     }
 
     @PostMapping("/book")
+    @CheckJwt
     public ResponseEntity<String> bookSeat(@RequestBody SeatReservationRequest request) {
         System.out.println("📥 收到預約請求：" + request);
 
         try {
-            String result = seatReservationService.reserveSeat(request);
-            return ResponseEntity.ok(result); // 成功
+            String result = seatReservationService.reserveSeat(request); //預約邏輯寫入 reservation 表
+
+            Optional<Seat> optionalSeat = seatRepo.findBySeatLabel(request.getSeatLabel());
+            if (optionalSeat.isPresent()) {
+                Seat seat = optionalSeat.get();
+                seat.setStatus(Seat.Status.AVAILABLE); // 修正：使用正確的 enum 值
+                seatRepo.save(seat);
+            } else {
+                return ResponseEntity.badRequest().body("❌ 座位不存在");
+            }
+
+            return ResponseEntity.ok(result); //  最終只有這個 return, 預約成功
 
         } catch (SeatAlreadyReservedException e) {
             // 該座位已被預約
@@ -61,9 +83,12 @@ public class SeatReservationController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("❌ 系統錯誤，請稍後再試");
         }
+
+
     }
 
     @GetMapping("/check")
+    @CheckJwt
     public ResponseEntity<Boolean> checkUserReserved(
             @RequestParam Integer userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -78,6 +103,7 @@ public class SeatReservationController {
 
 
     @PutMapping("/cancel")
+    @CheckJwt
     public ResponseEntity<String> cancelByUser(
             @RequestParam Integer userId,
             @RequestParam String seatLabel,
@@ -98,6 +124,34 @@ public class SeatReservationController {
             return ResponseEntity.badRequest().body("❌ 無效的時段：" + timeSlotStr);
         }
     }
+
+    // 查詢有未來預約的座位
+    @GetMapping("/upcoming")
+    public List<String> getUpcomingSeatLabels() {
+        return reservationRepo.findUpcomingSeatLabels(SeatReservation.Status.RESERVED);
+    }
+
+    // 查詢有未來預約的座位
+    @GetMapping("/next")
+    @CheckJwt
+    public ResponseEntity<?> getUpcomingReservation(@RequestParam Integer userId) {
+        Optional<SeatReservation> optional = reservationRepo
+                .findFirstByUserIdAndReservationDateAfterAndStatusOrderByReservationDateAsc(
+                        userId, LocalDate.now(), SeatReservation.Status.RESERVED
+                );
+
+        if (optional.isPresent()) {
+            SeatReservation res = optional.get();
+            SeatReservationDto dto = new SeatReservationDto();
+            dto.setSeatLabel(res.getSeat().getSeatLabel());
+            dto.setReservationDate(res.getReservationDate());
+            dto.setTimeSlot(res.getTimeSlot().toString());
+            return ResponseEntity.ok(dto);
+        } else {
+            return ResponseEntity.noContent().build();
+        }
+    }
+
 }
 
 

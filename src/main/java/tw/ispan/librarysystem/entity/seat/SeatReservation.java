@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import tw.ispan.librarysystem.enums.TimeSlot;
 
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -24,7 +25,7 @@ public class SeatReservation {
 
     @ManyToOne
     @JoinColumn(name = "s_id")
-    private SeatStatus seat;
+    private Seat seat;
 
     @Column(name = "reservation_date")
     private LocalDate reservationDate;
@@ -33,9 +34,12 @@ public class SeatReservation {
     @Column(name = "time_slot", nullable = false)
     private TimeSlot timeSlot;
 
+    public enum Status {
+        RESERVED, CANCELLED
+    }
 
     @Enumerated(EnumType.STRING)
-    private Status status;
+    private Status status;  // RESERVED or CANCELLED
 
     @CreationTimestamp
     private LocalDateTime createdAt;
@@ -43,9 +47,7 @@ public class SeatReservation {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    public enum Status {
-        RESERVED, CANCELLED
-    }
+
 
 }
 

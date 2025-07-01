@@ -1,0 +1,14 @@
+# Elasticsearch 配置範例
+elasticsearch:
+  host: localhost
+  port: 9200
+  # 如果 Elasticsearch 有設定認證，請取消註解並填入正確的認證資訊
+  # username: elastic
+  # password: your_password
+
+# 日誌配置
+logging:
+  level:
+    tw.ispan.librarysystem.elasticsearch: DEBUG
+    org.elasticsearch: INFO
+    org.apache.http: WARN 

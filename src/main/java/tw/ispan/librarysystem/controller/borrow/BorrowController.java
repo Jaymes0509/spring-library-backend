@@ -54,7 +54,7 @@ public class BorrowController {
                 return createErrorResponse("找不到會員資訊", 400);
             }
             
-            Integer userId = member.getId();
+            Long userId = member.getId();
             logger.info("收到借書請求 - 使用者ID: {}, 書籍ID: {}", userId, borrowRequest.getBookId());
             
             // 執行借書
@@ -147,7 +147,7 @@ public class BorrowController {
                 return createErrorResponse("找不到會員資訊", 400);
             }
             
-            Integer userId = member.getId();
+            Long userId = member.getId();
             logger.info("收到獲取會員借閱歷史請求 - 使用者ID: {}", userId);
             
             Map<String, Object> response = new HashMap<>();
@@ -159,7 +159,7 @@ public class BorrowController {
                 response.put("data", borrows.map(BorrowResponseDto::new));
                 response.put("pagination", createPaginationInfo(borrows));
             } else {
-                List<Borrow> borrows = borrowService.getMemberBorrowHistory(userId);
+                List<Borrow> borrows = borrowService.getMemberCurrentBorrows(userId);
                 response.put("data", borrows.stream().map(BorrowResponseDto::new).toList());
             }
             
@@ -187,7 +187,7 @@ public class BorrowController {
                 return createErrorResponse("找不到會員資訊", 400);
             }
             
-            Integer userId = member.getId();
+            Long userId = member.getId();
             logger.info("收到獲取會員當前借閱請求 - 使用者ID: {}", userId);
             
             List<Borrow> borrows = borrowService.getMemberCurrentBorrows(userId);
@@ -221,7 +221,7 @@ public class BorrowController {
                 return createErrorResponse("找不到會員資訊", 400);
             }
             
-            Integer userId = member.getId();
+            Long userId = member.getId();
             logger.info("收到獲取會員逾期借閱請求 - 使用者ID: {}", userId);
             
             List<Borrow> borrows = borrowService.getMemberOverdueBorrows(userId);
@@ -280,10 +280,10 @@ public class BorrowController {
                 return createErrorResponse("找不到會員資訊", 400);
             }
             
-            Integer userId = member.getId();
+            Long userId = member.getId();
             logger.info("收到獲取借閱統計請求 - 使用者ID: {}", userId);
             
-            BorrowStatisticsDto statistics = borrowService.getBorrowStatistics(userId);
+            BorrowStatisticsDto statistics = borrowService.getBorrowStatistics(userId.longValue());
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -314,7 +314,7 @@ public class BorrowController {
                 return createErrorResponse("找不到會員資訊", 400);
             }
             
-            Integer userId = member.getId();
+            Long userId = member.getId();
             logger.info("收到檢查借閱限制請求 - 使用者ID: {}", userId);
             
             Map<String, Object> limits = borrowService.checkBorrowLimits(userId);
@@ -350,7 +350,7 @@ public class BorrowController {
                 return createErrorResponse("找不到會員資訊", 400);
             }
             
-            Integer userId = member.getId();
+            Long userId = member.getId();
             logger.info("收到批量借書請求 - 使用者ID: {}, 書籍數量: {}", userId, batchRequest.getBooks().size());
             
             // 執行批量借書

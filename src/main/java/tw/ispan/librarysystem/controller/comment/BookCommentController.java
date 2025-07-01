@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.*;
 import tw.ispan.librarysystem.entity.comment.BookComment;
 import tw.ispan.librarysystem.service.comment.BookCommentService;
 import tw.ispan.librarysystem.dto.comment.TakeCommentBookInfoDto;
+import tw.ispan.librarysystem.entity.member.Member;
+import tw.ispan.librarysystem.service.member.MemberService;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
@@ -18,6 +20,9 @@ public class BookCommentController {
 
     @Autowired
     private BookCommentService bookCommentService;
+
+    @Autowired
+    private MemberService memberService; // 新增：用於透過 email 查 userId
 
     // 新增書評（POST）
     @PostMapping
@@ -67,7 +72,7 @@ public class BookCommentController {
         return ResponseEntity.ok(books);
     }
 
-    // 取得用戶所有書評（新增此方法以取得用戶的書評列表）
+    // 取得用戶所有書評
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<BookComment>> getCommentsByUserId(@PathVariable Integer userId) {
         List<BookComment> comments = bookCommentService.findCommentsByUserId(userId);
@@ -81,4 +86,13 @@ public class BookCommentController {
         return ResponseEntity.ok(books);
     }
 
+    // ✅ 根據 email 查 userId（新增方法 A）
+    @GetMapping("/user-id-by-email/{email}")
+    public ResponseEntity<Integer> getUserIdByEmail(@PathVariable String email) {
+        Member member = memberService.getMemberByEmail(email);
+        if (member == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.ok(member.getId().intValue());
+    }
 }

@@ -26,8 +26,12 @@ public class ManagerBookService {
 
     // 進階搜尋
     public Page<BookEntity> searchBooks(String title, String author, String publisher, String isbn,
-                                        String classification, LocalDate yearFrom, LocalDate yearTo, String language, Pageable pageable) {
-        return bookRepository.searchBooks(title, author, publisher, isbn, classification, yearFrom, yearTo, language,
+            String classification, Integer yearFrom, Integer yearTo, String language, Pageable pageable) {
+        // 將 Integer 年份轉換為 LocalDate
+        LocalDate yearFromDate = yearFrom != null ? LocalDate.of(yearFrom, 1, 1) : null;
+        LocalDate yearToDate = yearTo != null ? LocalDate.of(yearTo, 12, 31) : null;
+        
+        return bookRepository.searchBooks(title, author, publisher, isbn, classification, yearFromDate, yearToDate, language,
                 pageable);
     }
 

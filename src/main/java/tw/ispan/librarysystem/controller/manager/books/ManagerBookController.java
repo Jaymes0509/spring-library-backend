@@ -30,77 +30,76 @@ import tw.ispan.librarysystem.service.manager.books.ManagerBookService;
 @RequestMapping("/api/manager/books")
 public class ManagerBookController {
 
-    @Autowired
-    private ManagerBookService bookService;
+   @Autowired
+   private ManagerBookService bookService;
 
-    @Autowired
-    private BookMapper bookMapper;
+   @Autowired
+   private BookMapper bookMapper;
 
-    @Autowired
-    private BookDetailService bookDetailService;
+   @Autowired
+   private BookDetailService bookDetailService;
 
-    @PostMapping("/fill-details")
-    public ResponseEntity<String> fillMissingBookDetails() {
-        bookDetailService.updateMissingCoversAndSummaries();
-        return ResponseEntity.ok("補齊完成！");
-    }
+   @PostMapping("/fill-details")
+   public ResponseEntity<String> fillMissingBookDetails() {
+       bookDetailService.updateMissingCoversAndSummaries();
+       return ResponseEntity.ok("補齊完成！");
+   }
 
-    @GetMapping("/{bookId}")
-    public BookDTO getBookById(@PathVariable Integer bookId) {
-        BookEntity book = bookService.findById(bookId).orElse(null);
-        return bookMapper.toDTO(book);
-    }
+   @GetMapping("/{bookId}")
+   public BookDTO getBookById(@PathVariable Integer bookId) {
+       BookEntity book = bookService.findById(bookId).orElse(null);
+       return bookMapper.toDTO(book);
+   }
 
-    @GetMapping("/isbn/{isbn}")
-    public ResponseEntity<BookDTO> getBookByIsbn(@PathVariable String isbn) {
-        Optional<BookEntity> optional = bookService.findByIsbn(isbn);
-        if (optional.isPresent()) {
-            BookDTO dto = bookMapper.toDTO(optional.get());
-            return ResponseEntity.ok(dto);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
+   @GetMapping("/isbn/{isbn}")
+   public ResponseEntity<BookDTO> getBookByIsbn(@PathVariable String isbn) {
+       Optional<BookEntity> optional = bookService.findByIsbn(isbn);
+       if (optional.isPresent()) {
+           BookDTO dto = bookMapper.toDTO(optional.get());
+           return ResponseEntity.ok(dto);
+       } else {
+           return ResponseEntity.notFound().build();
+       }
+   }
 
-    @GetMapping("/simple-search")
-    public PageResponseDTO<BookDTO> simpleSearch(
-            @RequestParam String field,
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "title") String sortField,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
-        Page<BookEntity> bookPage = bookService.simpleSearch(field, keyword, pageable);
-        return bookMapper.toPageDTO(bookPage);
-    }
+   @GetMapping("/simple-search")
+   public PageResponseDTO<BookDTO> simpleSearch(
+           @RequestParam String field,
+           @RequestParam String keyword,
+           @RequestParam(defaultValue = "0") int page,
+           @RequestParam(defaultValue = "10") int size,
+           @RequestParam(defaultValue = "title") String sortField,
+           @RequestParam(defaultValue = "asc") String sortDir) {
+       Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+       Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+       Page<BookEntity> bookPage = bookService.simpleSearch(field, keyword, pageable);
+       return bookMapper.toPageDTO(bookPage);
+   }
 
-    @PostMapping("/advanced-search")
-    public PageResponseDTO<BookDTO> advancedSearch(
-            @RequestBody List<SearchCondition> conditions,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "title") String sortField,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
-        Page<BookEntity> bookPage = bookService.advancedSearch(conditions, pageable);
-        return bookMapper.toPageDTO(bookPage);
-    }
+   @PostMapping("/advanced-search")
+   public PageResponseDTO<BookDTO> advancedSearch(
+           @RequestBody List<SearchCondition> conditions,
+           @RequestParam(defaultValue = "0") int page,
+           @RequestParam(defaultValue = "10") int size,
+           @RequestParam(defaultValue = "title") String sortField,
+           @RequestParam(defaultValue = "asc") String sortDir) {
+       Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+       Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+       Page<BookEntity> bookPage = bookService.advancedSearch(conditions, pageable);
+       return bookMapper.toPageDTO(bookPage);
+   }
 
-    @GetMapping("/all")
-    public List<BookDTO> getAllBooks() {
-        // 這裡給一個很大的分頁，等於全部撈出來
-        Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
-        List<BookEntity> books = bookService.findAll(pageable).getContent();
-        return books.stream()
-                .map(bookMapper::toDTO)
-                .toList();
-    }
+   @GetMapping("/all")
+   public PageResponseDTO<BookDTO> getBooksPage(
+           @RequestParam(defaultValue = "0") int page,
+           @RequestParam(defaultValue = "20") int size) {
+       Pageable pageable = PageRequest.of(page, size);
+       Page<BookEntity> bookPage = bookService.findAll(pageable);
+       return bookMapper.toPageDTO(bookPage);
+   }
 
-    @GetMapping("/test")
-    public String test() {
-        return "test";
-    }
+   @GetMapping("/test")
+   public String test() {
+       return "test";
+   }
 }

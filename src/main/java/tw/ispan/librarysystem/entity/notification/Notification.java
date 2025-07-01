@@ -14,7 +14,7 @@ public class Notification {
     private Integer notificationId;
 
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private Long userId;
 
     @Column(name = "type", nullable = false)
     private String type;

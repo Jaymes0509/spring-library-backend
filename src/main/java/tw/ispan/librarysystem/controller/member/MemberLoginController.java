@@ -39,8 +39,8 @@ public class MemberLoginController {
             // 取得會員資訊
             Member member = memberService.getMemberByEmail(loginDto.getEmail());
 
-            // 產生 JWT token
-            String token = JwtTool.createToken(loginDto.getEmail());
+            // 產生包含 user_id 的 JWT token
+            String token = JwtTool.createTokenWithUserId(loginDto.getEmail(), member.getId());
 
             // 回傳成功結果
             Map<String, Object> response = new HashMap<>();
