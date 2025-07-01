@@ -17,6 +17,10 @@ import tw.ispan.librarysystem.entity.reservation.ReservationLogEntity;
 import tw.ispan.librarysystem.repository.reservation.ReservationRepository;
 import tw.ispan.librarysystem.service.reservation.ReservationService;
 import tw.ispan.librarysystem.service.reservation.ReservationLogService;
+import tw.ispan.librarysystem.security.CheckJwt;
+import tw.ispan.librarysystem.util.JwtTool;
+import tw.ispan.librarysystem.service.member.MemberService;
+import tw.ispan.librarysystem.entity.member.Member;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -40,24 +44,30 @@ public class ReservationController {
     
     @Autowired
     private ReservationLogService reservationLogService;
+    
+    @Autowired
+    private MemberService memberService;
 
     // 查詢用戶預約清單
     @Operation(summary = "查詢用戶預約清單")
     @GetMapping
-    public ResponseEntity<List<ReservationDTO>> getReservationsByUserId(@RequestParam String userId) {
+    @CheckJwt
+    public ResponseEntity<List<ReservationDTO>> getReservationsByUserId(@RequestHeader("Authorization") String authHeader) {
         try {
-            // 如果 userId 是 'current'，使用預設用戶 ID
-            Integer actualUserId;
-            if ("current".equals(userId)) {
-                actualUserId = 1; // 預設用戶 ID，實際應用中應該從認證系統獲取
-            } else {
-                actualUserId = Integer.parseInt(userId);
+            // 從JWT token中獲取使用者email
+            String token = authHeader.replace("Bearer ", "");
+            String email = JwtTool.parseToken(token);
+            
+            // 根據email獲取會員資訊
+            Member member = memberService.getMemberByEmail(email);
+            if (member == null) {
+                return ResponseEntity.badRequest().build();
             }
             
-            List<ReservationDTO> reservations = reservationService.getReservationsByUserId(actualUserId);
+            Integer userId = member.getId();
+            
+            List<ReservationDTO> reservations = reservationService.getReservationsByUserId(userId);
             return ResponseEntity.ok(reservations);
-        } catch (NumberFormatException e) {
-            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             System.out.println("預約失敗訊息：" + e.getMessage());
             return ResponseEntity.internalServerError().build();
@@ -83,6 +93,7 @@ public class ReservationController {
     // 單本預約
     @Operation(summary = "單本書籍預約")
     @PostMapping
+    @CheckJwt
     public ResponseEntity<ReservationResponseDTO> createReservation(@RequestBody ReservationDTO dto) {
         ReservationResponseDTO response = new ReservationResponseDTO();
         List<ReservationResponseDTO.Result> results = new ArrayList<>();
@@ -115,6 +126,7 @@ public class ReservationController {
     // 批量預約
     @Operation(summary = "批量預約多本書籍")
     @PostMapping("/batch")
+    @CheckJwt
     public ResponseEntity<ReservationResponseDTO> batchReservation(@RequestBody ReservationBatchRequestDTO batchDto) {
         ReservationResponseDTO response = new ReservationResponseDTO();
         
@@ -179,6 +191,7 @@ public class ReservationController {
     // 取消預約
     @Operation(summary = "取消單筆預約")
     @DeleteMapping("/{reservationId}")
+    @CheckJwt
     public ResponseEntity<?> deleteReservation(@PathVariable Integer reservationId) {
         return reservationRepository.findById(reservationId)
                 .map(reservation -> {
@@ -196,6 +209,7 @@ public class ReservationController {
     // 取消預約 API
     @Operation(summary = "將預約狀態設為取消")
     @PutMapping("/{reservationId}/cancel")
+    @CheckJwt
     public ResponseEntity<?> cancelReservation(@PathVariable Integer reservationId) {
         try {
             return reservationRepository.findById(reservationId)
@@ -318,20 +332,28 @@ public class ReservationController {
     // 新增：預約歷史查詢 API
     @Operation(summary = "查詢預約歷史紀錄")
     @GetMapping("/history")
+    @CheckJwt
     public ResponseEntity<List<ReservationHistoryDTO>> getReservationHistory(
-        @RequestParam(required = false) String userId,
-        @RequestParam(required = false, defaultValue = "true") boolean includeCancelled
+        @RequestParam(required = false, defaultValue = "true") boolean includeCancelled,
+        @RequestHeader("Authorization") String authHeader
     ) {
         try {
-            if (userId != null) {
-                // 查詢特定會員的預約歷史
-                List<ReservationHistoryDTO> history = reservationService.getReservationHistoryByUserId(userId, includeCancelled);
-                return ResponseEntity.ok(history);
-            } else {
-                // 查詢所有預約歷史 (管理員功能)
-                List<ReservationHistoryDTO> history = reservationService.getAllReservationHistory(includeCancelled);
-                return ResponseEntity.ok(history);
+            // 從JWT token中獲取使用者email
+            String token = authHeader.replace("Bearer ", "");
+            String email = JwtTool.parseToken(token);
+            
+            // 根據email獲取會員資訊
+            Member member = memberService.getMemberByEmail(email);
+            if (member == null) {
+                return ResponseEntity.badRequest().build();
             }
+            
+            Integer userId = member.getId();
+            
+            // 查詢當前登入用戶的預約歷史
+            List<ReservationHistoryDTO> history = reservationService.getReservationHistoryByUserId(userId.toString(), includeCancelled);
+            return ResponseEntity.ok(history);
+            
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
