@@ -1,4 +1,3 @@
-
 // @SuppressWarnings("SpellCheckingInspection")
 package tw.ispan.librarysystem.controller.reservation;
 
@@ -18,6 +17,7 @@ import tw.ispan.librarysystem.entity.reservation.ReservationLogEntity;
 import tw.ispan.librarysystem.repository.reservation.ReservationRepository;
 import tw.ispan.librarysystem.service.reservation.ReservationService;
 import tw.ispan.librarysystem.service.reservation.ReservationLogService;
+import tw.ispan.librarysystem.service.reservation.ReservationNotificationService;
 import tw.ispan.librarysystem.security.CheckJwt;
 import tw.ispan.librarysystem.util.JwtTool;
 import tw.ispan.librarysystem.service.member.MemberService;
@@ -51,12 +51,6 @@ public class ReservationController {
     @Autowired
     private ReservationNotificationService notificationService;
 
-    @Autowired
-    private MemberRepository memberRepository;
-
-    @Autowired
-    private MemberService memberService;
-
     // 從 JWT token 獲取用戶 ID 的輔助方法
     private Integer getUserIdFromToken(String authHeader) {
         try {
@@ -84,7 +78,7 @@ public class ReservationController {
                 return ResponseEntity.badRequest().build();
             }
             
-            Integer userId = member.getId();
+            Integer userId = member.getId().intValue();
             
 
             List<ReservationDTO> reservations = reservationService.getReservationsByUserId(userId);
@@ -115,8 +109,7 @@ public class ReservationController {
     @Operation(summary = "單本書籍預約")
     @PostMapping
     @CheckJwt
-
-    public ResponseEntity<ReservationResponseDTO> createReservation(@RequestBody ReservationDTO dto) {
+    public ResponseEntity<ReservationResponseDTO> createReservation(@RequestBody ReservationDTO dto, @RequestHeader("Authorization") String authHeader) {
         ReservationResponseDTO response = new ReservationResponseDTO();
         List<ReservationResponseDTO.Result> results = new ArrayList<>();
         ReservationResponseDTO.Result result = new ReservationResponseDTO.Result();
@@ -153,8 +146,7 @@ public class ReservationController {
     @Operation(summary = "批量預約多本書籍")
     @PostMapping("/batch")
     @CheckJwt
-
-    public ResponseEntity<ReservationResponseDTO> batchReservation(@RequestBody ReservationBatchRequestDTO batchDto) {
+    public ResponseEntity<ReservationResponseDTO> batchReservation(@RequestBody ReservationBatchRequestDTO batchDto, @RequestHeader("Authorization") String authHeader) {
         ReservationResponseDTO response = new ReservationResponseDTO();
 
         // 生成統一的批次預約編號
@@ -173,6 +165,10 @@ public class ReservationController {
             // 從 JWT token 獲取真實的用戶 ID
             Integer userId = getUserIdFromToken(authHeader);
             batchDto.setUserId(userId);
+            
+            // 從JWT token中獲取使用者email
+            String token = authHeader.replace("Bearer ", "");
+            String email = JwtTool.parseToken(token);
             
             System.out.println("用戶ID: " + userId);
             System.out.println("預約書籍數量: " + batchDto.getBooks().size());
@@ -238,7 +234,7 @@ public class ReservationController {
                 System.out.println("準備發送批量通知郵件...");
                 try {
                     // 根據 userId 查找會員資訊
-                    Member member = memberRepository.findById(userId.longValue()).orElse(null);
+                    Member member = memberService.getMemberByEmail(email);
                     if (member != null) {
                         notificationService.sendBatchReservationSuccessEmail(member, successfulReservations, batchReservationId);
                         System.out.println("批量通知郵件發送完成");
@@ -285,7 +281,7 @@ public class ReservationController {
     @Operation(summary = "將預約狀態設為取消")
     @PutMapping("/{reservationId}/cancel")
     @CheckJwt
-    public ResponseEntity<?> cancelReservation(@PathVariable Integer reservationId) {
+    public ResponseEntity<?> cancelReservation(@PathVariable Integer reservationId, @RequestHeader("Authorization") String authHeader) {
 
         try {
             Integer userId = getUserIdFromToken(authHeader);
@@ -439,7 +435,7 @@ public class ReservationController {
                 return ResponseEntity.badRequest().build();
             }
             
-            Integer userId = member.getId();
+            Long userId = member.getId();
             
             // 查詢當前登入用戶的預約歷史
             List<ReservationHistoryDTO> history = reservationService.getReservationHistoryByUserId(userId.toString(), includeCancelled);
