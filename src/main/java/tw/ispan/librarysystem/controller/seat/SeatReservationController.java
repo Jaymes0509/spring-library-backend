@@ -152,6 +152,26 @@ public class SeatReservationController {
         }
     }
 
+    // 查詢今天（含）以後所有的座位預約的API
+    @GetMapping("/all-upcoming")
+    @CheckJwt
+    public ResponseEntity<List<SeatReservationDto>> getAllUpcomingReservations(@RequestParam Integer userId) {
+        List<SeatReservation> reservations = reservationRepo.findAllUpcomingByUserId(
+                userId, LocalDate.now(), SeatReservation.Status.RESERVED
+        );
+
+        List<SeatReservationDto> dtos = reservations.stream().map(res -> {
+            SeatReservationDto dto = new SeatReservationDto();
+            dto.setSeatLabel(res.getSeat().getSeatLabel());
+            dto.setReservationDate(res.getReservationDate());
+            dto.setTimeSlot(res.getTimeSlot().toString());
+            return dto;
+        }).toList();
+
+        return ResponseEntity.ok(dtos);
+    }
+
+
 }
 
 
