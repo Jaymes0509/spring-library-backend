@@ -7,20 +7,20 @@ import java.util.List;
  */
 public class ReservationLogBatchDeleteRequest {
     
-    private List<Long> logIds;
+    private List<Integer> logIds;
 
     public ReservationLogBatchDeleteRequest() {
     }
 
-    public ReservationLogBatchDeleteRequest(List<Long> logIds) {
+    public ReservationLogBatchDeleteRequest(List<Integer> logIds) {
         this.logIds = logIds;
     }
 
-    public List<Long> getLogIds() {
+    public List<Integer> getLogIds() {
         return logIds;
     }
 
-    public void setLogIds(List<Long> logIds) {
+    public void setLogIds(List<Integer> logIds) {
         this.logIds = logIds;
     }
 } 

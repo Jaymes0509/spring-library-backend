@@ -74,7 +74,7 @@ public class ReservationLogController {
                 return ResponseEntity.badRequest().body(response);
             }
             
-            Long userId = member.getId().longValue();
+            Integer userId = member.getId().intValue();
             logger.info("從JWT token解析用戶ID: {}", userId);
             
             // 檢查必要欄位
@@ -84,9 +84,9 @@ public class ReservationLogController {
             }
 
             // 從請求中獲取資料並進行類型轉換
-            Long bookId = null;
+            Integer bookId = null;
             try {
-                bookId = Long.valueOf(request.get("book_id").toString());
+                bookId = Integer.valueOf(request.get("book_id").toString());
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("book_id 格式不正確");
             }
@@ -98,7 +98,7 @@ public class ReservationLogController {
                        bookId, userId, action, status);
 
             // 建立預約清單
-            ReservationLogEntity log = reservationLogService.createLog(bookId, userId, action, status);
+            ReservationLogEntity log = reservationLogService.createLog(bookId.longValue(), userId, action, status);
 
             // 設置回應
             response.put("success", true);
@@ -139,7 +139,7 @@ public class ReservationLogController {
                 return ResponseEntity.badRequest().build();
             }
             
-            Long userId = member.getId().longValue();
+            Integer userId = member.getId().intValue();
             logger.info("從JWT token解析用戶ID: {}", userId);
 
             
@@ -151,7 +151,7 @@ public class ReservationLogController {
 
                 dto.setUserId(log.getUserId());
 
-                dto.setBookId(log.getBookId());
+                dto.setBookId(log.getBookId().intValue());
                 dto.setAction(log.getAction());
                 dto.setStatus(log.getStatus());
                 dto.setMessage(log.getMessage());
@@ -188,7 +188,7 @@ public class ReservationLogController {
     @Operation(summary = "移除單筆預約清單項目")
     @DeleteMapping("/{logId}")
     @CheckJwt
-    public ResponseEntity<Map<String, Object>> deleteLogById(@PathVariable Long logId, @RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<Map<String, Object>> deleteLogById(@PathVariable Integer logId, @RequestHeader("Authorization") String authHeader) {
         Map<String, Object> response = new HashMap<>();
         
         try {
@@ -208,11 +208,11 @@ public class ReservationLogController {
                 return ResponseEntity.badRequest().body(response);
             }
             
-            Long userId = member.getId().longValue();
+            Integer userId = member.getId().intValue();
             
             // 檢查預約記錄是否存在且屬於當前用戶
 
-            ReservationLogEntity log = reservationLogService.getLogById(logId).orElse(null);
+            ReservationLogEntity log = reservationLogService.getLogById(logId.longValue()).orElse(null);
             if (log == null) {
                 response.put("success", false);
                 response.put("message", "找不到指定的預約清單");
@@ -229,7 +229,7 @@ public class ReservationLogController {
 
             }
             
-            boolean deleted = reservationLogService.deleteLogById(logId);
+            boolean deleted = reservationLogService.deleteLogById(logId.longValue());
             
             if (deleted) {
                 response.put("success", true);
@@ -264,9 +264,6 @@ public class ReservationLogController {
         try {
             logger.info("收到批量移除預約清單請求: logIds={}", request.getLogIds());
             
-            // 從 JWT token 獲取用戶 ID
-            Integer userId = getUserIdFromToken(authHeader);
-            
             if (request.getLogIds() == null || request.getLogIds().isEmpty()) {
                 response.put("success", false);
                 response.put("message", "請提供要移除的清單ID列表");
@@ -287,11 +284,11 @@ public class ReservationLogController {
                 return ResponseEntity.badRequest().body(response);
             }
             
-            Long userId = member.getId().longValue();
+            Integer userId = member.getId().intValue();
             
             // 檢查所有要刪除的記錄是否都屬於當前用戶
-            for (Long logId : request.getLogIds()) {
-                ReservationLogEntity log = reservationLogService.getLogById(logId).orElse(null);
+            for (Integer logId : request.getLogIds()) {
+                ReservationLogEntity log = reservationLogService.getLogById(logId.longValue()).orElse(null);
                 if (log == null) {
                     response.put("success", false);
                     response.put("message", "找不到指定的預約清單: " + logId);
@@ -307,7 +304,9 @@ public class ReservationLogController {
                 }
             }
             
-            int deletedCount = reservationLogService.deleteLogsByIds(request.getLogIds());
+            int deletedCount = reservationLogService.deleteLogsByIds(
+                request.getLogIds().stream().map(Integer::longValue).collect(Collectors.toList())
+            );
             
             response.put("success", true);
             response.put("message", String.format("成功移除 %d 筆預約清單", deletedCount));

@@ -6,8 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ReservationLogDTO {
     private Long logId;
-    private Long userId;
-    private Long bookId;
+    private Integer userId;
+    private Integer bookId;
     private String action;
     private String status;
     private String message;
@@ -24,11 +24,11 @@ public class ReservationLogDTO {
     public Long getLogId() { return logId; }
     public void setLogId(Long logId) { this.logId = logId; }
 
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
+    public Integer getUserId() { return userId; }
+    public void setUserId(Integer userId) { this.userId = userId; }
 
-    public Long getBookId() { return bookId; }
-    public void setBookId(Long bookId) { this.bookId = bookId; }
+    public Integer getBookId() { return bookId; }
+    public void setBookId(Integer bookId) { this.bookId = bookId; }
 
     public String getAction() { return action; }
     public void setAction(String action) { this.action = action; }
