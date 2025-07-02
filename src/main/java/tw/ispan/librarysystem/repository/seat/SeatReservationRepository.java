@@ -73,6 +73,14 @@ public interface SeatReservationRepository extends JpaRepository<SeatReservation
     @Query("SELECT DISTINCT r.seat.seatLabel FROM SeatReservation r WHERE r.reservationDate >= CURRENT_DATE AND r.status = :status")
     List<String> findUpcomingSeatLabels(@Param("status") SeatReservation.Status status);
 
+    // 查詢今日含以後的所有預約
+    @Query("SELECT r FROM SeatReservation r WHERE r.userId = :userId AND r.reservationDate >= :today AND r.status = :status ORDER BY r.reservationDate ASC")
+    List<SeatReservation> findAllUpcomingByUserId(
+            @Param("userId") Integer userId,
+            @Param("today") LocalDate today,
+            @Param("status") SeatReservation.Status status
+    );
+
 
 }
 
