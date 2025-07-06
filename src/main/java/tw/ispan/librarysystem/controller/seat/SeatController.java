@@ -38,7 +38,7 @@ public class SeatController {
     // 管理員標記座位損壞
     @PutMapping("/mark-broken/{label}")
     @CheckJwt
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> markSeatAsBroken(@PathVariable String label) {
         Optional<Seat> optional = seatRepository.findBySeatLabel(label);
         if (optional.isPresent()) {
@@ -54,7 +54,7 @@ public class SeatController {
     //管理員恢復成可用座位
     @PutMapping("/mark-available/{label}")
     @CheckJwt
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> markSeatAsAvailable(@PathVariable String label) {
         Optional<Seat> optional = seatRepository.findBySeatLabel(label);
         if (optional.isEmpty()) {
