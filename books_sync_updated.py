@@ -2,6 +2,7 @@ import pymysql
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch.helpers import BulkIndexError
 from datetime import datetime
+from tqdm import tqdm  # ✅ 匯入進度條套件
 
 class BookSync:
     def __init__(self):
@@ -16,44 +17,30 @@ class BookSync:
             cursorclass=pymysql.cursors.DictCursor
         )
 
-        # 連接到本機的 Elasticsearch 節點
+        # 連接到 Elasticsearch
         self.es = Elasticsearch(
             "http://localhost:9200",
-            basic_auth=("elastic", "elastic")  # 請填你的 elastic 使用者密碼
+            basic_auth=("elastic", "elastic")  # ← 替換成你實際的帳號密碼
         )
         print("✅ 已連接到 Elasticsearch")
 
     def create_index(self):
-        # 如果已存在名為 books 的 index，先刪除
         if self.es.indices.exists(index="books"):
             print("⚠️ 偵測到舊的 index 'books'，正在刪除...")
             self.es.indices.delete(index="books")
             print("🗑️ 已刪除舊的 index")
 
-        # 建立新的 index，並定義欄位 mapping
         mapping = {
             "mappings": {
                 "properties": {
                     "book_id": {"type": "integer"},
-                    "isbn": {"type": "keyword"},  # 用來精確查找
+                    "isbn": {"type": "keyword"},
                     "title": {
-                        "type": "text",           # 支援全文模糊搜尋
-                        "fields": {
-                            "keyword": {"type": "keyword"}  # 支援排序與精確比對
-                        }
-                    },
-                    "author": {
                         "type": "text",
-                        "fields": {
-                            "keyword": {"type": "keyword"}
-                        }
+                        "fields": {"keyword": {"type": "keyword"}}
                     },
-                    "publisher": {
-                        "type": "text",
-                        "fields": {
-                            "keyword": {"type": "keyword"}
-                        }
-                    },
+                    "author": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+                    "publisher": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
                     "publishdate": {"type": "integer"},
                     "version": {"type": "keyword"},
                     "type": {"type": "keyword"},
@@ -67,7 +54,6 @@ class BookSync:
             }
         }
 
-        # 建立新的 index
         self.es.indices.create(index="books", body=mapping)
         print("✅ 已建立新的 index 'books' 並設定 mapping")
 
@@ -76,7 +62,6 @@ class BookSync:
             return None
         if isinstance(dt, datetime):
             return dt.isoformat()
-        # MySQL 可能回傳字串 'YYYY-MM-DD HH:MM:SS'
         return str(dt).replace(' ', 'T')
 
     def sync_data(self):
@@ -86,17 +71,12 @@ class BookSync:
             print(f"📚 從資料庫中取得 {len(books)} 本書籍")
 
             actions = []
-            for book in books:
-                # 日期格式轉換
+            # ✅ 加入 tqdm 進度條
+            for book in tqdm(books, desc="📤 同步中", unit="本"):
                 book["created_at"] = self.format_datetime(book.get("created_at"))
                 book["updated_at"] = self.format_datetime(book.get("updated_at"))
-                # is_available 處理
-                if book.get("is_available") is None:
-                    book["is_available"] = 0
-                else:
-                    # 轉成 bool
-                    book["is_available"] = bool(book["is_available"])
-                # 其他欄位可依需求補齊
+                book["is_available"] = bool(book.get("is_available", 0))
+
                 actions.append({
                     "_index": "books",
                     "_id": book["book_id"],
@@ -108,7 +88,7 @@ class BookSync:
                 print(f"🚀 已成功同步 {len(actions)} 筆書籍資料到 Elasticsearch")
             except BulkIndexError as e:
                 print("❌ 有文件同步失敗！")
-                for error in e.errors[:10]:  # 只印前10筆
+                for error in e.errors[:10]:
                     print(error)
 
 if __name__ == "__main__":
