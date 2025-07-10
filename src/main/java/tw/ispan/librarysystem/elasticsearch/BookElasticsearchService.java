@@ -113,19 +113,30 @@ public class BookElasticsearchService {
             log.info("\n查詢型態: {}, field={}, keyword={}", queryType, field, keyword);
             
             //向 Elasticsearch 查詢書籍資料，並設定分頁、排序、查詢條件
-            response = client.search(s -> s
-                .index(BOOKS_INDEX)
-                .from(from)
-                .size(size)
-                .sort(so -> so
-                    .field(f -> f
-                        .field(sortFieldForEs)
-                        .order("asc".equalsIgnoreCase(sortDir) ? SortOrder.Asc : SortOrder.Desc)
+            boolean hasSort = sortField != null && !sortField.isBlank() && !"relevance".equalsIgnoreCase(sortField);
+            if (hasSort) {
+                response = client.search(s -> s
+                    .index(BOOKS_INDEX)
+                    .from(from)
+                    .size(size)
+                    .sort(so -> so
+                        .field(f -> f
+                            .field(sortFieldForEs)
+                            .order("asc".equalsIgnoreCase(sortDir) ? SortOrder.Asc : SortOrder.Desc)
+                        )
                     )
-                )
-                .query(query),
-                BookDoc.class
-            );
+                    .query(query),
+                    BookDoc.class
+                );
+            } else {
+                response = client.search(s -> s
+                    .index(BOOKS_INDEX)
+                    .from(from)
+                    .size(size)
+                    .query(query),
+                    BookDoc.class
+                );
+            }
 
             //查詢結果轉成 List<BookDoc>，方便後續處理
             List<BookDoc> docs = response.hits().hits().stream()
